@@ -1,4 +1,4 @@
-# MiniBench-WIP
+# MiniBench.Warren
 Somewhere to try out some ideas for MiniBench
 
 - [x] Code tidy-up
