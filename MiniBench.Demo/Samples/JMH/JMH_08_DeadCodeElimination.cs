@@ -2,10 +2,10 @@
 using System;
 //using System.Runtime.CompilerServices;
 
-namespace MiniBench.Demo
+namespace MiniBench.Demo.Samples.JMH
 {
     // From http://hg.openjdk.java.net/code-tools/jmh/file/e0f24b563ae3/jmh-samples/src/main/java/org/openjdk/jmh/samples/JMHSample_08_DeadCode.java
-    class SampleDeadCodeElimination
+    class JMH_08_DeadCodeElimination
     {
         private double x = Math.PI;
         private Blackhole blackhole = new Blackhole();

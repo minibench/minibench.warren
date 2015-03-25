@@ -1,6 +1,6 @@
 ﻿using MiniBench.Core;
 
-namespace MiniBench.Demo
+namespace MiniBench.Demo.Samples.General
 {
     // See http://codeblog.jonskeet.uk/2014/07/16/micro-optimization-the-surprising-inefficiency-of-readonly-fields/
     // Building this from the command line with /o+ /debug- and running (in a 64-bit CLR, but no RyuJIT) this takes about 20 seconds to run on my laptop. 

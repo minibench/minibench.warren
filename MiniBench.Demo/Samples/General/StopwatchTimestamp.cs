@@ -2,7 +2,7 @@
 using System;
 using System.Diagnostics;
 
-namespace MiniBench.Demo
+namespace MiniBench.Demo.Samples.General
 {
     // Inspired by 
     // http://shipilev.net/blog/2014/nanotrusting-nanotime
@@ -24,7 +24,7 @@ namespace MiniBench.Demo
     //        granularity_nanotime:     371,237 +- 1,239 ns
     //            latency_nanotime:      14,326 +- 0,308 ns
 
-    class SampleStopwatchTimestamp
+    class StopwatchTimestamp
     {
         [Benchmark]
         public void baseline()

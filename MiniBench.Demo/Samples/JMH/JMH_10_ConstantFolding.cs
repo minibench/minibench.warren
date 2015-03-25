@@ -1,10 +1,10 @@
 ﻿using MiniBench.Core;
 using System;
 
-namespace MiniBench.Demo
+namespace MiniBench.Demo.Samples.JMH
 {
     // From http://hg.openjdk.java.net/code-tools/jmh/file/e0f24b563ae3/jmh-samples/src/main/java/org/openjdk/jmh/samples/JMHSample_10_ConstantFold.java
-    public class SampleConstantFolding
+    public class JMH_10_ConstantFolding
     {
         // IDEs will say "Oh, you can convert this field to local variable". Don't. Trust. Them.
         private double x = Math.PI;

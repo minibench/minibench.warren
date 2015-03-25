@@ -2,10 +2,10 @@
 using System;
 using System.Runtime.CompilerServices;
 
-namespace MiniBench.Demo
+namespace MiniBench.Demo.Samples.General
 {
-    // From // From https://github.com/controlflow/resharper-heapview/blob/master/ReSharper.HeapView/Tests/Data/Daemon/SlowDelegates01.cs
-    class SampleSlowDelegates
+    // From https://github.com/controlflow/resharper-heapview/blob/master/ReSharper.HeapView/Tests/Data/Daemon/SlowDelegates01.cs
+    class SlowDelegates
     {
         private delegate void Action();
 
