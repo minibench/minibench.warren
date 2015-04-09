@@ -118,6 +118,7 @@
     </EmbeddedResource>
     <Compile Include="BenchmarkTemplate.cs" />
     <Compile Include="CodeGenerator.cs" />
+    <Compile Include="LauncherTemplate.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="ProjectFileParser.cs" />
     <Compile Include="ProjectSettings.cs" />
