@@ -4,7 +4,6 @@ using System.Reflection;
 
 namespace MiniBench.Core
 {
-
     internal class CommandLineArgs
     {
         public bool ShouldExit { get; private set; }
@@ -14,8 +13,17 @@ namespace MiniBench.Core
 
         private readonly OptionSet optionSet;
         private bool help;
-        
-        public CommandLineArgs(string[] args)
+
+        private static CommandLineArgs instance;
+        public static CommandLineArgs Instance { get { return instance; } }
+
+        public static CommandLineArgs SetupCommandLineArgs(string[] args)
+        {
+            instance = new CommandLineArgs(args);
+            return instance;
+        }
+
+        private CommandLineArgs(string[] args)
         {
             optionSet = SetupOptions();
             ShouldExit = false;

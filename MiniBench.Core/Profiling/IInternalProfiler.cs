@@ -7,9 +7,11 @@ namespace MiniBench.Core.Profiling
     /// The callbacks run before and after each individual Benchmark iteration and return a result for that run
     /// All the individual results are then collacted (per Benchmark) and displayed at the end
     /// </summary>
-    public interface IInternalProfiler
+    internal interface IInternalProfiler
     {
-        string SummaryText();
+        string Name { get; }
+
+        string SummaryText { get; }
 
         void BeforeIteration();
 

@@ -28,7 +28,7 @@ namespace MiniBench
             this.projectSettings = projectSettings;
 
             // We don't want to target .NET 2.0 only LANGUAGE features, otherwise we can't use all the nice compiler-only stuff
-            // like var, auto-properties, names arguments, etc. The main thing is that when we build the Benchmark .exe/.dll, 
+            // like var, auto-properties, named arguments, etc. The main thing is that when we build the Benchmark .exe/.dll, 
             // we need to TARGET the correct Runtime Framework Version, which is either .NET 2.0 or 4.0.
             parseOptions = new CSharpParseOptions(kind: SourceCodeKind.Regular, languageVersion: LanguageVersion.CSharp4);
         }
@@ -73,7 +73,7 @@ namespace MiniBench
             CompileAndEmitCode(allSyntaxTrees);
         }
 
-        private IEnumerable<SyntaxTree> GenerateRunners(IEnumerable<MethodDeclarationSyntax> methods, string namespaceName, string className, string outputDirectory)
+        private IEnumerable<SyntaxTree> GenerateRunners(IList<MethodDeclarationSyntax> methods, string namespaceName, string className, string outputDirectory)
         {
             var methodWithAttributes = methods.Select(m => new
                 {
@@ -84,7 +84,7 @@ namespace MiniBench
                 });
             Console.WriteLine(
                 String.Join("\n", methodWithAttributes.Select(m => 
-                    string.Format("{0,25} - {1} - (Blackhole {2,5}), Attributes = {3}",
+                    string.Format("{0,25} - {1} - (Blackhole={2,5}), Attributes = {3}",
                         m.Name, m.ReturnType.ToString().PadRight(10), m.Blackhole, m.Attributes))));
 
             var validMethods = methods.Where(m => m.Modifiers.Any(mod => mod.IsKind(SyntaxKind.PublicKeyword)))
@@ -123,7 +123,7 @@ namespace MiniBench
 
         private SyntaxTree GenerateLauncher(string outputDirectory)
         {
-            var generatedLauncher = BenchmarkTemplate.ProcessLauncherTemplate();
+            var generatedLauncher = LauncherTemplate.ProcessLauncherTemplate();
             var outputFileName = Path.Combine(outputDirectory, launcherFileName);
             var codeGenTimer = Stopwatch.StartNew();
             var generatedLauncherTree = CSharpSyntaxTree.ParseText(generatedLauncher, options: parseOptions, path: outputFileName, encoding: defaultEncoding);
@@ -164,7 +164,7 @@ namespace MiniBench
 
         private void CompileAndEmitCode(IEnumerable<SyntaxTree> allSyntaxTrees)
         {
-            // As we're adding out own Main Function, we always Compile as OutputKind.ConsoleApplication, regardless of the actual extension (dll/exe)
+            // As we're adding our own "main" function, we always Compile as OutputKind.ConsoleApplication, regardless of the actual extension (dll/exe)
             var compilationOptions = new CSharpCompilationOptions(
                                             outputKind: OutputKind.ConsoleApplication,
                                             mainTypeName: "MiniBench.Benchmarks.Program",
@@ -262,7 +262,14 @@ namespace MiniBench
                 // <Reference Include="xunit">
                 //     <HintPath>..\packages\xunit.1.9.2\lib\net20\xunit.dll</HintPath>
                 // </Reference>
-                standardReferences.Add(MetadataReference.CreateFromFile(Path.GetFullPath(Path.Combine(projectSettings.RootFolder, reference.Item2))));
+
+                // TODO work out how to get rid of the following Warning (that appears in the VS Output Window)
+                // warning CS1701: Assuming assembly reference 'mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089' used by 'xunit' 
+                //                            matches identity 'mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089' of 'mscorlib', 
+                //                 you may need to supply runtime policy
+
+                var metadataReference = MetadataReference.CreateFromFile(Path.GetFullPath(Path.Combine(projectSettings.RootFolder, reference.Item2)));
+                standardReferences.Add(metadataReference);
             }
 
             Console.WriteLine("\nAdding References:\n\t" + String.Join("\n\t", standardReferences.Select(r => r.Display)));

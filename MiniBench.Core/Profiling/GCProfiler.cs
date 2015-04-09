@@ -3,16 +3,24 @@ using System.Collections.Generic;
 
 namespace MiniBench.Core.Profiling
 {
-    public class GCProfiler : IInternalProfiler
+    internal class GCProfiler : IInternalProfiler
     {
         private int beforeGen0, beforeGen1, beforeGen2;
         private long memoryBefore;
 
-        public string SummaryText()
+        public string Name
         {
-            return
-                "GCProfiler - Calculates the GC Collection Counts for Generations 0, 1 and 2. " + 
-                "Also calculates the memory usage (per iteration) and the peak during the entire run";
+            get { return "GCProfiler"; }
+        }
+
+        public string SummaryText
+        {
+            get
+            {
+                return
+                    "GCProfiler - Calculates the GC Collection Counts for Generations 0, 1 and 2. " +
+                    "Also calculates the memory usage (per iteration) and the peak during the entire run";
+            }
         }
 
         public void BeforeIteration()

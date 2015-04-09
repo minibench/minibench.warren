@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace MiniBench.Core.Profiling
 {
-    public class Profiler
+    internal class Profiler
     {
         internal readonly Dictionary<IInternalProfiler, AggregatedProfilerResult []> Profilers =
             new Dictionary<IInternalProfiler, AggregatedProfilerResult []>
@@ -11,35 +11,41 @@ namespace MiniBench.Core.Profiling
                 { new GCProfiler(), null }
             };
 
-        public void BeforeIteration()
+        private CommandLineArgs arguments;
+
+        internal Profiler(CommandLineArgs arguments)
         {
-            foreach (KeyValuePair<IInternalProfiler, AggregatedProfilerResult []> profiler in Profilers)
+            this.arguments = arguments;
+        }
+
+        internal void BeforeIteration()
+        {
+            foreach (var profiler in Profilers)
             {
                 profiler.Key.BeforeIteration();
             }
         }
 
-        public void AfterIteration()
+        internal void AfterIteration()
         {
             try
             {
-
-                IInternalProfiler [] keysCopy = new IInternalProfiler[Profilers.Keys.Count];
+                var keysCopy = new IInternalProfiler[Profilers.Keys.Count];
                 Profilers.Keys.CopyTo(keysCopy, 0);
                 foreach (IInternalProfiler profiler in keysCopy)
                 {
                     IList<ProfilerResult> results = profiler.AfterIteration();
                     if (Profilers[profiler] == null && results.Count > 0)
                     {
-                        AggregatedProfilerResult[] aggregatedResult = new AggregatedProfilerResult[results.Count];
+                        var aggregatedResult = new AggregatedProfilerResult[results.Count];
                         for (int i = 0; i < results.Count; i++)
                         {
                             aggregatedResult[i] = new AggregatedProfilerResult
-                            (
-                                results[i].Name,
-                                results[i].Units,
-                                results[i].AggregationMode
-                            );
+                                (
+                                    results[i].Name,
+                                    results[i].Units,
+                                    results[i].AggregationMode
+                                );
                             aggregatedResult[i].RawResults.Add(results[i].Value);
                         }
                         Profilers[profiler] = aggregatedResult;
@@ -56,16 +62,16 @@ namespace MiniBench.Core.Profiling
             catch (Exception ex)
             {
                 // TODO where does the Exception bubble up to if we don't have a try-catch here??
-                Console.WriteLine(ex.ToString());
+                Console.WriteLine("Profiler: " + ex.ToString());
                 Console.WriteLine(ex.StackTrace);
             }
         }
 
-        public void PrintIterationResults()
+        internal void PrintIterationResults()
         {
             try
             {
-                foreach (KeyValuePair<IInternalProfiler, AggregatedProfilerResult[]> profiler in Profilers)
+                foreach (var profiler in Profilers)
                 {
                     if (profiler.Value != null)
                     {
@@ -80,16 +86,16 @@ namespace MiniBench.Core.Profiling
             catch (Exception ex)
             {
                 // TODO where does the Exception bubble up to if we don't have a try-catch here??
-                Console.WriteLine(ex.ToString());
+                Console.WriteLine("Profiler: " + ex.ToString());
                 Console.WriteLine(ex.StackTrace);
             }
         }
 
-        public void PrintOverallResults()
+        internal void PrintOverallResults()
         {
             try
             {
-                foreach (KeyValuePair<IInternalProfiler, AggregatedProfilerResult[]> profiler in Profilers)
+                foreach (var profiler in Profilers)
                 {
                     if (profiler.Value != null)
                     {
@@ -104,7 +110,7 @@ namespace MiniBench.Core.Profiling
             catch (Exception ex)
             {
                 // TODO where does the Exception bubble up to if we don't have a try-catch here??
-                Console.WriteLine(ex.ToString());
+                Console.WriteLine("Profiler: " + ex.ToString());
                 Console.WriteLine(ex.StackTrace);
             }
         }

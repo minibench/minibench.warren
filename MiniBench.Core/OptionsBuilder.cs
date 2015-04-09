@@ -2,14 +2,14 @@
 
 namespace MiniBench.Core
 {
-    public class OptionsBuilder
+    public sealed class OptionsBuilder
     {
         private Type benchmarkType;
         private String benchmarkRegex;
 
         private bool useType = false;
-        private int runs;
-        private int warmupRuns;
+        private int runs = 5;       // Default to 5 runs
+        private int warmupRuns = 5; // Default to 5 warmup runs
 
         public OptionsBuilder Include(Type benchmarkType)
         {
@@ -40,9 +40,9 @@ namespace MiniBench.Core
         public Options Build()
         {
             if (useType)
-                return new Options(benchmarkType, warmupRuns, runs);
+                return new Options(benchmarkType, warmupRuns: warmupRuns, runs: runs);
 
-            return new Options(benchmarkRegex, warmupRuns, runs);
+            return new Options(benchmarkRegex, warmupRuns: warmupRuns, runs: runs);
         }
     }
 }

@@ -1,9 +1,8 @@
 ﻿using System.Collections.ObjectModel;
-using MiniBench.Core.Profiling;
 
 namespace MiniBench.Core
 {
-    public interface IBenchmarkTarget
+    internal interface IBenchmarkTarget
     {
         string Namespace { get; }
 
@@ -13,6 +12,6 @@ namespace MiniBench.Core
 
         ReadOnlyCollection<string> Categories { get; }
 
-        BenchmarkResult RunTest(Options options, Profiler profiler);
+        BenchmarkResult RunTest(Options options);
     }
 }
