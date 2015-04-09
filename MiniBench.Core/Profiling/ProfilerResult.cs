@@ -1,6 +1,6 @@
 ﻿namespace MiniBench.Core.Profiling
 {
-    public class ProfilerResult
+    internal class ProfilerResult
     {
         public string Name { get; private set; }
         public double Value { get; private set; }

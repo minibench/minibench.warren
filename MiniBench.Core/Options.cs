@@ -2,7 +2,7 @@
 
 namespace MiniBench.Core
 {
-    public class Options
+    public sealed class Options
     {
         private readonly Type benchmarkType;
         public Type BenchmarkType { get { return benchmarkType; } }

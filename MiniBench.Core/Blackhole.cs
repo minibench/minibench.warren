@@ -8,7 +8,7 @@ namespace MiniBench.Core
 {
     // Currently this is pretty much a copy of the JMH (Java) version, see 
     // http://hg.openjdk.java.net/code-tools/jmh/file/e0f24b563ae3/jmh-core/src/main/java/org/openjdk/jmh/infra/Blackhole.java
-    public class Blackhole
+    public sealed class Blackhole
     {
         //public volatile double d1;
         public double d1;

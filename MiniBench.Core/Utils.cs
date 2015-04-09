@@ -2,7 +2,7 @@
 
 namespace MiniBench.Core
 {
-    public static class Utils
+    internal static class Utils
     {
         public static double TicksToNanoseconds(Stopwatch timer)
         {

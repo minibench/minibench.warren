@@ -1,6 +1,6 @@
 ﻿namespace MiniBench.Core.Profiling
 {
-    public enum AggregationMode
+    internal enum AggregationMode
     {
         Sum,
         Average,

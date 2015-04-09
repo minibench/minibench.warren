@@ -9,7 +9,7 @@ namespace MiniBench.Core
     public sealed class BenchmarkResult : MarshalByRefObject
     {
         private readonly IBenchmarkTarget target;
-        public IBenchmarkTarget Target { get { return target; } }
+        //public IBenchmarkTarget Target { get { return target; } }
 
         private readonly long iterations;
         public long Iterations { get { return iterations; } }
