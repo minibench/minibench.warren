@@ -1,10 +1,14 @@
-﻿namespace MiniBench
+﻿using System.Collections.Generic;
+using System.Text;
+
+namespace MiniBench
 {
     class BenchmarkTemplate
     {
         private static string namespaceReplaceText = "##NAMESPACE-NAME##";
         private static string classReplaceText = "##CLASS-NAME##";
         private static string methodReplaceText = "##METHOD-NAME##";
+        private static string warmupMethodCallReplaceText = "##WARMUP-METHOD-CALL##";
         private static string benchmarkMethodCallReplaceText = "##BENCHMARK-METHOD-CALL##";
         private static string generatedClassReplaceText = "##GENERAGED-CLASS-NAME##";
 
@@ -50,11 +54,16 @@ namespace MiniBench.Benchmarks
                 Console.WriteLine(""Running benchmark: {0}.{1}"", @type, @method);
                 ##CLASS-NAME## benchmarkClass = GetBenchmarkClass();
 
+                IterationParams warmupIterations = new IterationParams();
+                warmupIterations.Count = 0;
+
+                IterationParams iterations = new IterationParams();
+
                 //System.Diagnostics.Debugger.Launch();
                 //System.Diagnostics.Debugger.Break();
 
                 // Make sure the method is JIT-compiled.
-                ##BENCHMARK-METHOD-CALL##;
+                ##WARMUP-METHOD-CALL##;
 
                 GC.Collect();
                 GC.WaitForPendingFinalizers();
@@ -62,31 +71,30 @@ namespace MiniBench.Benchmarks
                 //System.Diagnostics.Debugger.Launch();
 
                 Stopwatch stopwatch = new Stopwatch();
-                long warmupIterations = 0;
                 long ticks = (long)(Stopwatch.Frequency * options.WarmupTime.TotalSeconds);
                 stopwatch.Reset();
                 stopwatch.Start();
-                warmupIterations = 0;
                 while (stopwatch.ElapsedTicks < ticks)
                 {
-                    ##BENCHMARK-METHOD-CALL##;
-                    warmupIterations++;
+                    ##WARMUP-METHOD-CALL##;
+                    warmupIterations.Count++;
                 }
                 stopwatch.Stop();
                 Console.WriteLine(""Warmup:    {0,12:N0} iterations in {1,10:N3} ms, {2,6:N3} ns/op"", 
-                                    warmupIterations, stopwatch.Elapsed.TotalMilliseconds, Utils.TicksToNanoseconds(stopwatch) / warmupIterations);
+                                    warmupIterations.Count, stopwatch.Elapsed.TotalMilliseconds, Utils.TicksToNanoseconds(stopwatch) / warmupIterations.Count);
 
                 double ratio = options.TargetTime.TotalSeconds / stopwatch.Elapsed.TotalSeconds;
-                long iterations = (long)(warmupIterations * ratio);
+                iterations.TotalCount = (int)(warmupIterations.Count * ratio);
                 GC.Collect();
                 GC.WaitForPendingFinalizers();
 
                 for (int batch = 0; batch < options.Runs; batch++)
                 {
+                    iterations.Batch = batch;
                     profiler.BeforeIteration();
                     stopwatch.Reset();
                     stopwatch.Start();
-                    for (long iteration = 0; iteration < iterations; iteration++)
+                    for (iterations.Count = 0; iterations.Count < iterations.TotalCount; iterations.Count++)
                     {
                         ##BENCHMARK-METHOD-CALL##;
                     }
@@ -94,16 +102,18 @@ namespace MiniBench.Benchmarks
                     profiler.AfterIteration();
 
                     Console.WriteLine(""Benchmark: {0,12:N0} iterations in {1,10:N3} ms, {2,6:N3} ns/op"", 
-                                        iterations, stopwatch.Elapsed.TotalMilliseconds, Utils.TicksToNanoseconds(stopwatch) / iterations);
+                                        iterations.Count, stopwatch.Elapsed.TotalMilliseconds, Utils.TicksToNanoseconds(stopwatch) / iterations.Count);
 
                     profiler.PrintIterationResults();
                 }
 
-                return BenchmarkResult.ForSuccess(this, iterations, stopwatch.Elapsed);
+                return BenchmarkResult.ForSuccess(this, iterations.TotalCount, stopwatch.Elapsed);
             }
             catch (Exception e)
             {
                 // TODO: Stack trace?
+                Console.WriteLine(""ERROR in Benchmark: "" + e.Message);
+                Console.WriteLine(e.ToString());
                 return BenchmarkResult.ForFailure(this, e.ToString());
             }
         }
@@ -118,23 +128,45 @@ namespace MiniBench.Benchmarks
     }
 }";
 
-        internal static string ProcessCodeTemplates(string namespaceName, string className, string methodName, 
-                                                    string generatedClassName, bool generateBlackhole)
+        internal static string ProcessCodeTemplates(string namespaceName, string className, string methodName,
+                                    string generatedClassName, IList<string> parametersToInject, bool generateBlackhole)
         {
             // TODO at some point, we might need a less-hacky templating mechanism?!
-            string benchmarkMethodCall;
-            if (generateBlackhole)
-                benchmarkMethodCall = string.Format("blackhole.Consume(benchmarkClass.{0}())", methodName);
-            else
-                benchmarkMethodCall = string.Format("benchmarkClass.{0}()", methodName);
+
+            var benchmarkMethodCall = GetMethodCallWithParameters(methodName, parametersToInject, generateBlackhole);
+            var warmupMethodCall = GetMethodCallWithParameters(methodName, parametersToInject, generateBlackhole, warmupMethod: true);
 
             var generatedBenchmark = benchmarkHarnessTemplate
                                 .Replace(namespaceReplaceText, namespaceName)
                                 .Replace(classReplaceText, className)
                                 .Replace(methodReplaceText, methodName)
+                                .Replace(warmupMethodCallReplaceText, warmupMethodCall)
                                 .Replace(benchmarkMethodCallReplaceText, benchmarkMethodCall)
                                 .Replace(generatedClassReplaceText, generatedClassName);
             return generatedBenchmark;
+        }
+
+        private static string GetMethodCallWithParameters(string methodName, IEnumerable<string> parametersToInject, 
+                                                          bool generateBlackhole, bool warmupMethod = false)
+        {
+            var methodParameters = new StringBuilder();
+            foreach (var paramater in parametersToInject)
+            {
+                switch (paramater)
+                {
+                    case "IterationParams":
+                        methodParameters.Append(warmupMethod ? "warmupIterations" : "iterations");
+                        break;
+                    // TODO Add in "BenchmarkParams" support
+                    //case "BenchmarkParams":
+                }
+            }
+
+            string methodCallWithParameters = string.Format("benchmarkClass.{0}({1})", methodName, methodParameters);
+            if (generateBlackhole)
+                methodCallWithParameters = string.Format("blackhole.Consume({0})", methodCallWithParameters);
+
+            return methodCallWithParameters;
         }
     }
 }

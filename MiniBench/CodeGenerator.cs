@@ -53,6 +53,13 @@ namespace MiniBench
                 var code = File.ReadAllText(Path.Combine(projectSettings.RootFolder, file));
                 var benchmarkTree = CSharpSyntaxTree.ParseText(code, options: parseOptions);
 
+                // TODO see if we need to get the semantic model for the code, not just the syntax one?
+                // At the moment we're just doing a string match on the Attribute/Parameter type, so it's not completely robust!!
+                // See https://joshvarty.wordpress.com/2014/10/30/learn-roslyn-now-part-7-introducing-the-semantic-model/
+                // var compilation = CSharpCompilation.Create("MyCompilation",
+                //        syntaxTrees: new[] { tree }, references: new[] { MetadataReference.CreateFromAssembly(typeof(object).Assembly) });
+                // var model = compilation.GetSemanticModel(tree);
+
                 // TODO error checking, in case the file doesn't have a Namespace, Class or any valid Methods!
                 var @namespace = NodesOfType<NamespaceDeclarationSyntax>(benchmarkTree).FirstOrDefault();
                 var namespaceName = @namespace.Name.ToString();
@@ -75,17 +82,19 @@ namespace MiniBench
 
         private IEnumerable<SyntaxTree> GenerateRunners(IList<MethodDeclarationSyntax> methods, string namespaceName, string className, string outputDirectory)
         {
-            var methodWithAttributes = methods.Select(m => new
+            var methodInfo = methods.Select(m => new
                 {
                     Name = m.Identifier.ToString(),
                     ReturnType = m.ReturnType,
                     Blackhole = ShouldGenerateBlackhole(m.ReturnType),
-                    Attributes = String.Join(", ", m.AttributeLists.SelectMany(atrl => atrl.Attributes.Select(atr => atr.Name.ToString())))
+                    Attributes = String.Join(", ", m.AttributeLists.SelectMany(atrl => atrl.Attributes.Select(atr => atr.Name.ToString()))),
+                    InjectedArgs = String.Join(", ", m.ParameterList.Parameters.Select(p => p.GetText()))
+                    //InjectedArgs = String.Join(", ", m.ParameterList.Parameters.Select(p => p.Type + " " + p.Identifier))
                 });
             Console.WriteLine(
-                String.Join("\n", methodWithAttributes.Select(m => 
-                    string.Format("{0,25} - {1} - (Blackhole={2,5}), Attributes = {3}",
-                        m.Name, m.ReturnType.ToString().PadRight(10), m.Blackhole, m.Attributes))));
+                String.Join("\n", methodInfo.Select(m => 
+                    string.Format("{0,30} - {1} - Blackhole={2}, Attributes = {3}, InjectedParams = {4}",
+                        m.Name, m.ReturnType.ToString().PadRight(10), m.Blackhole.ToString().PadRight(5), m.Attributes, m.InjectedArgs))));
 
             var validMethods = methods.Where(m => m.Modifiers.Any(mod => mod.IsKind(SyntaxKind.PublicKeyword)))
                                       .Where(m => m.AttributeLists.SelectMany(atrl => atrl.Attributes)
@@ -106,7 +115,16 @@ namespace MiniBench
 
                 var codeGenTimer = Stopwatch.StartNew();
                 var generateBlackhole = ShouldGenerateBlackhole(method.ReturnType);
-                var generatedBenchmark = BenchmarkTemplate.ProcessCodeTemplates(namespaceName, className, methodName, generatedClassName, generateBlackhole);
+                var allowedInjectedParamaters = new[]
+                    {
+                        "IterationParams",
+                        //"BenchmarkParams
+                    };
+                var parametersToInject = method.ParameterList.Parameters
+                                               .Where(p => allowedInjectedParamaters.Any(a => a == p.Type.ToString()))
+                                               .Select(p => p.Type.ToString())
+                                               .ToList();
+                var generatedBenchmark = BenchmarkTemplate.ProcessCodeTemplates(namespaceName, className, methodName, generatedClassName, parametersToInject, generateBlackhole);
                 var generatedRunnerTree = CSharpSyntaxTree.ParseText(generatedBenchmark, options: parseOptions, path: outputFileName, encoding: defaultEncoding);
                 generatedRunners.Add(generatedRunnerTree);
                 codeGenTimer.Stop();
