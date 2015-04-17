@@ -126,6 +126,7 @@
       <Link>Core\ParamsWithStepsAttribute.cs</Link>
     </EmbeddedResource>
     <Compile Include="Analyser.cs" />
+    <Compile Include="BenchmarkInfo.cs" />
     <Compile Include="BenchmarkTemplate.cs" />
     <Compile Include="CodeGenerator.cs" />
     <Compile Include="LauncherTemplate.cs" />

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Text;
+using MiniBench.Core;
 
 namespace MiniBench
 {
@@ -11,6 +12,9 @@ namespace MiniBench
         private static string warmupMethodCallReplaceText = "##WARMUP-METHOD-CALL##";
         private static string benchmarkMethodCallReplaceText = "##BENCHMARK-METHOD-CALL##";
         private static string generatedClassReplaceText = "##GENERAGED-CLASS-NAME##";
+
+        private static string paramsStartCodeReplaceText = "##PARAMS-START-CODE##";
+        private static string paramsEndCodeReplaceText = "##PARAMS-END-CODE##";
 
         private static string benchmarkHarnessTemplate =
 @"using MiniBench.Core;
@@ -70,6 +74,8 @@ namespace MiniBench.Benchmarks
 
                 //System.Diagnostics.Debugger.Launch();
 
+                ##PARAMS-START-CODE##
+
                 Stopwatch stopwatch = new Stopwatch();
                 long ticks = (long)(Stopwatch.Frequency * options.WarmupTime.TotalSeconds);
                 stopwatch.Reset();
@@ -107,6 +113,9 @@ namespace MiniBench.Benchmarks
                     profiler.PrintIterationResults();
                 }
 
+                ##PARAMS-END-CODE##
+
+                // Need to collect the results from the multiple ""params"" runs and return a list, now a single result
                 return BenchmarkResult.ForSuccess(this, iterations.TotalCount, stopwatch.Elapsed);
             }
             catch (Exception e)
@@ -128,29 +137,43 @@ namespace MiniBench.Benchmarks
     }
 }";
 
-        internal static string ProcessCodeTemplates(string namespaceName, string className, string methodName,
-                                    string generatedClassName, IList<string> parametersToInject, bool generateBlackhole)
+
+        internal static string ProcessCodeTemplates(BenchmarkInfo info)
         {
             // TODO at some point, we might need a less-hacky templating mechanism?!
+            // Maybe Razor? see https://github.com/volkovku/RazorTemplates
 
-            var benchmarkMethodCall = GetMethodCallWithParameters(methodName, parametersToInject, generateBlackhole);
-            var warmupMethodCall = GetMethodCallWithParameters(methodName, parametersToInject, generateBlackhole, warmupMethod: true);
+            var benchmarkMethodCall = GetMethodCallWithParameters(info);
+            var warmupMethodCall = GetMethodCallWithParameters(info, warmupMethod: true);
+
+            string paramsStartCode = "", paramsEndCode = "";
+
+            if (info.ParamsWithSteps != null && info.ParamsFieldName != null)
+            {
+                paramsStartCode =
+"for int param = " + info.ParamsWithSteps.Start + "; param <= " + info.ParamsWithSteps.End + "; param += " + info.ParamsWithSteps.Step +
+"\n{\n" + "benchmarkClass." + info.ParamsFieldName + " = param;\n";
+
+                paramsEndCode = "}\n";
+            }
 
             var generatedBenchmark = benchmarkHarnessTemplate
-                                .Replace(namespaceReplaceText, namespaceName)
-                                .Replace(classReplaceText, className)
-                                .Replace(methodReplaceText, methodName)
+                                .Replace(namespaceReplaceText, info.NamespaceName)
+                                .Replace(classReplaceText, info.ClassName)
+                                .Replace(methodReplaceText, info.MethodName)
                                 .Replace(warmupMethodCallReplaceText, warmupMethodCall)
                                 .Replace(benchmarkMethodCallReplaceText, benchmarkMethodCall)
-                                .Replace(generatedClassReplaceText, generatedClassName);
+                                .Replace(generatedClassReplaceText, info.GeneratedClassName)
+                                .Replace(paramsStartCodeReplaceText, paramsStartCode)
+                                .Replace(paramsEndCodeReplaceText, paramsEndCode);
+
             return generatedBenchmark;
         }
 
-        private static string GetMethodCallWithParameters(string methodName, IEnumerable<string> parametersToInject, 
-                                                          bool generateBlackhole, bool warmupMethod = false)
+        private static string GetMethodCallWithParameters(BenchmarkInfo info, bool warmupMethod = false)
         {
             var methodParameters = new StringBuilder();
-            foreach (var paramater in parametersToInject)
+            foreach (var paramater in info.ParametersToInject)
             {
                 switch (paramater)
                 {
@@ -162,8 +185,8 @@ namespace MiniBench.Benchmarks
                 }
             }
 
-            string methodCallWithParameters = string.Format("benchmarkClass.{0}({1})", methodName, methodParameters);
-            if (generateBlackhole)
+            string methodCallWithParameters = string.Format("benchmarkClass.{0}({1})", info.MethodName, methodParameters);
+            if (info.GenerateBlackhole)
                 methodCallWithParameters = string.Format("blackhole.Consume({0})", methodCallWithParameters);
 
             return methodCallWithParameters;

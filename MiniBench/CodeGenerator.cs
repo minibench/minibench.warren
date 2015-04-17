@@ -1,6 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -21,7 +20,6 @@ namespace MiniBench
 
         private readonly String filePrefix = "Generated_Runner";
         private readonly String launcherFileName = "Generated_Launcher.cs";
-        private readonly String benchmarkAttribute = "Benchmark";
 
         internal CodeGenerator(ProjectSettings projectSettings)
         {
@@ -53,24 +51,12 @@ namespace MiniBench
                 var code = File.ReadAllText(Path.Combine(projectSettings.RootFolder, file));
                 var benchmarkTree = CSharpSyntaxTree.ParseText(code, options: parseOptions);
 
-                // TODO see if we need to get the semantic model for the code, not just the syntax one?
-                // At the moment we're just doing a string match on the Attribute/Parameter type, so it's not completely robust!!
-                // See https://joshvarty.wordpress.com/2014/10/30/learn-roslyn-now-part-7-introducing-the-semantic-model/
-                // var compilation = CSharpCompilation.Create("MyCompilation",
-                //        syntaxTrees: new[] { tree }, references: new[] { MetadataReference.CreateFromAssembly(typeof(object).Assembly) });
-                // var model = compilation.GetSemanticModel(tree);
-
-                // TODO error checking, in case the file doesn't have a Namespace, Class or any valid Methods!
-                var @namespace = NodesOfType<NamespaceDeclarationSyntax>(benchmarkTree).FirstOrDefault();
-                var namespaceName = @namespace.Name.ToString();
-                // TODO we're not robust to having multiple classes in 1 file, we need to find the class that contains the [Benchmark] methods!!
-                var @class = NodesOfType<ClassDeclarationSyntax>(benchmarkTree).FirstOrDefault();
-                var className = @class.Identifier.ToString();
-                var allMethods = NodesOfType<MethodDeclarationSyntax>(benchmarkTree);
+                var analyser = new Analyser();
+                var benchmarkInfo = analyser.AnalyseBenchmark(benchmarkTree, filePrefix);
 
                 allSyntaxTrees.Add(benchmarkTree);
 
-                var generatedRunners = GenerateRunners(allMethods, namespaceName, className, generatedCodeDirectory);
+                var generatedRunners = GenerateRunners(benchmarkInfo, generatedCodeDirectory);
                 allSyntaxTrees.AddRange(generatedRunners);
             }
 
@@ -80,51 +66,14 @@ namespace MiniBench
             CompileAndEmitCode(allSyntaxTrees);
         }
 
-        private IEnumerable<SyntaxTree> GenerateRunners(IList<MethodDeclarationSyntax> methods, string namespaceName, string className, string outputDirectory)
+        private IEnumerable<SyntaxTree> GenerateRunners(IEnumerable<BenchmarkInfo> benchmarkInfo, string outputDirectory)
         {
-            var methodInfo = methods.Select(m => new
-                {
-                    Name = m.Identifier.ToString(),
-                    ReturnType = m.ReturnType,
-                    Blackhole = ShouldGenerateBlackhole(m.ReturnType),
-                    Attributes = String.Join(", ", m.AttributeLists.SelectMany(atrl => atrl.Attributes.Select(atr => atr.Name.ToString()))),
-                    InjectedArgs = String.Join(", ", m.ParameterList.Parameters.Select(p => p.GetText()))
-                    //InjectedArgs = String.Join(", ", m.ParameterList.Parameters.Select(p => p.Type + " " + p.Identifier))
-                });
-            Console.WriteLine(
-                String.Join("\n", methodInfo.Select(m => 
-                    string.Format("{0,30} - {1} - Blackhole={2}, Attributes = {3}, InjectedParams = {4}",
-                        m.Name, m.ReturnType.ToString().PadRight(10), m.Blackhole.ToString().PadRight(5), m.Attributes, m.InjectedArgs))));
-
-            var validMethods = methods.Where(m => m.Modifiers.Any(mod => mod.IsKind(SyntaxKind.PublicKeyword)))
-                                      .Where(m => m.AttributeLists.SelectMany(atrl => atrl.Attributes)
-                                                                  .Any(atr => atr.Name.ToString() == benchmarkAttribute))
-                                      .ToList();
-            var generatedRunners = new List<SyntaxTree>(validMethods.Count);
-            foreach (var method in validMethods)
+            var generatedRunners = new List<SyntaxTree>(benchmarkInfo.Count());
+            foreach (var info in benchmarkInfo)
             {
-                var methodName = method.Identifier.ToString();
-                // Can't have '.' or '-' in class names (which is where this gets used)
-                var generatedClassName = string.Format("{0}_{1}_{2}_{3}",
-                                            filePrefix,
-                                            namespaceName.Replace('.', '_'),
-                                            className,
-                                            methodName);
-                var fileName = string.Format(generatedClassName + ".cs");
-                var outputFileName = Path.Combine(outputDirectory, fileName);
-
                 var codeGenTimer = Stopwatch.StartNew();
-                var generateBlackhole = ShouldGenerateBlackhole(method.ReturnType);
-                var allowedInjectedParamaters = new[]
-                    {
-                        "IterationParams",
-                        //"BenchmarkParams
-                    };
-                var parametersToInject = method.ParameterList.Parameters
-                                               .Where(p => allowedInjectedParamaters.Any(a => a == p.Type.ToString()))
-                                               .Select(p => p.Type.ToString())
-                                               .ToList();
-                var generatedBenchmark = BenchmarkTemplate.ProcessCodeTemplates(namespaceName, className, methodName, generatedClassName, parametersToInject, generateBlackhole);
+                var outputFileName = Path.Combine(outputDirectory, info.FileName);
+                var generatedBenchmark = BenchmarkTemplate.ProcessCodeTemplates(info);
                 var generatedRunnerTree = CSharpSyntaxTree.ParseText(generatedBenchmark, options: parseOptions, path: outputFileName, encoding: defaultEncoding);
                 generatedRunners.Add(generatedRunnerTree);
                 codeGenTimer.Stop();
@@ -134,7 +83,7 @@ namespace MiniBench
                 File.WriteAllText(outputFileName, generatedRunnerTree.GetRoot().ToFullString(), encoding: defaultEncoding);
                 fileWriteTimer.Stop();
                 Console.WriteLine("Took {0} ({1,7:N2}ms) - to write file to disk", fileWriteTimer.Elapsed, fileWriteTimer.ElapsedMilliseconds);
-                Console.WriteLine("Generated file: {0}\n", fileName);
+                Console.WriteLine("Generated file: {0}\n", info.FileName);
             }
             return generatedRunners;
         }
@@ -216,22 +165,6 @@ namespace MiniBench
             }
         }
 
-        private bool ShouldGenerateBlackhole(TypeSyntax returnType)
-        {
-            // If the method returns void, double, etc, then the type will be "PredefinedTypeSyntax"
-            var predefinedTypeSyntax = returnType as PredefinedTypeSyntax;
-            if (predefinedTypeSyntax != null && predefinedTypeSyntax.Keyword.IsKind(SyntaxKind.VoidKeyword) == false)
-                return true;
-
-            // If the method returns DateTime, String, etc, then the type will be "IdentifierNameSyntax"
-            var identifierNameSyntax = returnType as IdentifierNameSyntax;
-            if (identifierNameSyntax != null && identifierNameSyntax.IsKind(SyntaxKind.VoidKeyword) == false)
-                return true;
-
-            // If we don't know, return false?
-            return false;
-        }
-
         private IEnumerable<MetadataReference> GetRequiredReferences()
         {
             var standardReferences = new List<MetadataReference>(16);
@@ -293,14 +226,6 @@ namespace MiniBench
             Console.WriteLine("\nAdding References:\n\t" + String.Join("\n\t", standardReferences.Select(r => r.Display)));
 
             return standardReferences;
-        }
-
-        private static IList<T> NodesOfType<T>(SyntaxTree tree)
-        {
-            return tree.GetRoot()
-                    .DescendantNodes()
-                    .OfType<T>()
-                    .ToList();
         }
     }
 }
