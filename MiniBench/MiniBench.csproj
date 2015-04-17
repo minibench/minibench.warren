@@ -116,6 +116,16 @@
     <EmbeddedResource Include="..\MiniBench.Core\CommandLineArgs.cs">
       <Link>Core\CommandLineArgs.cs</Link>
     </EmbeddedResource>
+    <EmbeddedResource Include="..\MiniBench.Core\IterationParams.cs">
+      <Link>Core\IterationParams.cs</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\MiniBench.Core\ParamsAttribute.cs">
+      <Link>Core\ParamsAttribute.cs</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\MiniBench.Core\ParamsWithStepsAttribute.cs">
+      <Link>Core\ParamsWithStepsAttribute.cs</Link>
+    </EmbeddedResource>
+    <Compile Include="Analyser.cs" />
     <Compile Include="BenchmarkTemplate.cs" />
     <Compile Include="CodeGenerator.cs" />
     <Compile Include="LauncherTemplate.cs" />
@@ -127,6 +137,12 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MiniBench.Core\MiniBench.Core.csproj">
+      <Project>{C1A5C977-180E-428C-8661-78C4381D9E42}</Project>
+      <Name>MiniBench.Core</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

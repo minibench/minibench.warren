@@ -42,10 +42,13 @@
     <Compile Include="Blackhole.cs" />
     <Compile Include="CategoryAttribute.cs" />
     <Compile Include="CommandLineArgs.cs" />
+    <Compile Include="IterationParams.cs" />
+    <Compile Include="ParamsWithStepsAttribute.cs" />
     <Compile Include="IBenchmarkTarget.cs" />
     <Compile Include="MonoOptions.cs" />
     <Compile Include="Options.cs" />
     <Compile Include="OptionsBuilder.cs" />
+    <Compile Include="ParamsAttribute.cs" />
     <Compile Include="Profiling\AggregatedProfilerResult.cs" />
     <Compile Include="Profiling\AggregationMode.cs" />
     <Compile Include="Profiling\GCProfiler.cs" />

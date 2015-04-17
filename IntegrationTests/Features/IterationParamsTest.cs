@@ -34,6 +34,7 @@ namespace Features
             // It seems like Assert Failiures inside the Benchmark, don't actually fail the test, although
             // there is a message printed in the test output. Probably because we create a new instance of
             // the class inside the Benchmark, we don't use the same one as the test runner?
+            // Or maybe because the Benchmark runner swallows the exceptions, so the Unit-test runner can't see them?!
             Assert.NotNull(iteration);
 
             if (iteration.Count == 0)

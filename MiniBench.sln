@@ -38,6 +38,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp-4.0", "Integrati
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Features", "IntegrationTests\Features\Features.csproj", "{F9A0E64C-4E51-435C-B1D7-7DC43B5855E2}"
+	ProjectSection(ProjectDependencies) = postProject
+		{EB051CB9-7B65-4429-9D64-4AE72B0E6B70} = {EB051CB9-7B65-4429-9D64-4AE72B0E6B70}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

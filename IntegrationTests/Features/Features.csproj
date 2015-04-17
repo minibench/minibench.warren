@@ -45,6 +45,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IterationParamsTest.cs" />
+    <Compile Include="ParamsTest.cs" />
+    <Compile Include="ParamsWithStepsTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -27,7 +27,7 @@ namespace MiniBench.Demo
                     .Build();
             new Runner(opt).Run();
 
-            Assert.True(DemoTestRunCount > 0);
+            Assert.True(DemoTestRunCount > 0, "Expected the Benchmark method to be run at least once: " + DemoTestRunCount);
             Console.WriteLine("After test, DemoTestRunCount = {0:N0}", DemoTestRunCount);
         }
 
