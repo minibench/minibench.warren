@@ -4,6 +4,7 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using MiniBench.Core;
 
 namespace MiniBench
 {
@@ -27,62 +28,107 @@ namespace MiniBench
             // var model = compilation.GetSemanticModel(tree);
 
             // TODO error checking, in case the file doesn't have a Namespace, Class or any valid Methods!
-            var @namespace = NodesOfType<NamespaceDeclarationSyntax>(benchmarkCode).FirstOrDefault();
+            var @namespace = benchmarkCode.GetRoot()
+                                          .DescendantNodes()
+                                          .OfType<NamespaceDeclarationSyntax>()
+                                          .FirstOrDefault();
             var namespaceName = @namespace.Name.ToString();
-            // TODO we're not robust to having multiple classes in 1 file, we need to find the class that contains the [Benchmark] methods!!
-            var @class = NodesOfType<ClassDeclarationSyntax>(benchmarkCode).FirstOrDefault();
-            var className = @class.Identifier.ToString();
-            var methods = NodesOfType<MethodDeclarationSyntax>(benchmarkCode);
 
-            var fields = NodesOfType<FieldDeclarationSyntax>(@class.SyntaxTree);
-            if (fields.Count > 0)
-                Console.WriteLine("Fields:\n" + String.Join("\n", fields.Select(f => f.ToString() + " -> " + String.Join(", ", f.AttributeLists.SelectMany(atr => atr.Attributes)))) + "\n");
-            var properties = NodesOfType<PropertyDeclarationSyntax>(@class.SyntaxTree);
-            if (properties.Count > 0)
-                Console.WriteLine("Properties:\n" + String.Join("", properties.Select(p => p.ToString() + " -> " + String.Join(", ", p.AttributeLists.SelectMany(atr => atr.Attributes)))) + "\n");
-
-            PrintMethodDebuggingInfo(methods);
-
-            var validMethods = methods.Where(m => m.Modifiers.Any(mod => mod.IsKind(SyntaxKind.PublicKeyword)))
-                                      .Where(m => m.AttributeLists.SelectMany(atrl => atrl.Attributes)
-                                                                  .Any(atr => atr.Name.ToString() == benchmarkAttribute))
-                                      .ToList();
-            var benchmarkInfo = new List<BenchmarkInfo>(validMethods.Count);
-            foreach (var method in validMethods)
+            var benchmarkInfo = new List<BenchmarkInfo>();
+            foreach (var @class in @namespace.ChildNodes().OfType<ClassDeclarationSyntax>())
             {
-                var methodName = method.Identifier.ToString();
-                // Can't have '.' or '-' in class names (which is where this gets used)
-                var generatedClassName = string.Format("{0}_{1}_{2}_{3}",
-                                                       filePrefix,
-                                                       namespaceName.Replace('.', '_'),
-                                                       className,
-                                                       methodName);
-                var fileName = string.Format(generatedClassName + ".cs");
+                var className = @class.Identifier.ToString();
+                var methods = @class.ChildNodes().OfType<MethodDeclarationSyntax>().ToList();
+                var paramInfo = GetParamInfo(@class);
+                PrintMethodDebuggingInfo(methods);
 
-                var generateBlackhole = ShouldGenerateBlackhole(method.ReturnType);
-                var parametersToInject = method.ParameterList.Parameters
-                                               .Where(p => allowedInjectedParamaters.Any(a => a == p.Type.ToString()))
-                                               .Select(p => p.Type.ToString())
-                                               .ToList();
-
-                benchmarkInfo.Add(new BenchmarkInfo
-                    {
-                        NamespaceName = @namespaceName,
-                        ClassName = className,
-                        MethodName = methodName,
-                        FileName = fileName,
-                        GeneratedClassName = generatedClassName,
-
-                        GenerateBlackhole = generateBlackhole,
-                        ParametersToInject = parametersToInject,
-
-                        // TODO Complete these 2!!!!
-                        ParamsWithSteps = null,
-                        ParamsFieldName = null,
-                    });
+                foreach (var method in methods.Where(m => m.Modifiers.Any(mod => mod.IsKind(SyntaxKind.PublicKeyword)))
+                                              .Where(m => m.AttributeLists.SelectMany(atrl => atrl.Attributes)
+                                                                      .Any(atr => atr.Name.ToString() == benchmarkAttribute)))
+                {
+                    var methodName = method.Identifier.ToString();
+                    // Can't have '.' or '-' in class names (which is where this gets used)
+                    var generatedClassName = string.Format("{0}_{1}_{2}_{3}",
+                                                           filePrefix,
+                                                           namespaceName.Replace('.', '_'),
+                                                           className,
+                                                           methodName);
+                    var fileName = string.Format(generatedClassName + ".cs");
+                    var generateBlackhole = ShouldGenerateBlackhole(method.ReturnType);
+                    var parametersToInject = method.ParameterList.Parameters
+                                                   .Where(p => allowedInjectedParamaters.Any(a => a == p.Type.ToString()))
+                                                   .Select(p => p.Type.ToString())
+                                                   .ToList();
+                    benchmarkInfo.Add(new BenchmarkInfo
+                        {
+                            NamespaceName = @namespaceName,
+                            ClassName = className,
+                            MethodName = methodName,
+                            FileName = fileName,
+                            GeneratedClassName = generatedClassName,
+                            GenerateBlackhole = generateBlackhole,
+                            ParametersToInject = parametersToInject,
+                            ParamsWithSteps = paramInfo.Item1,
+                            ParamsFieldName = paramInfo.Item2,
+                        });
+                }
             }
 
             return benchmarkInfo;
+        }
+
+        private Tuple<ParamsWithStepsAttribute, String> GetParamInfo(ClassDeclarationSyntax @class)
+        {
+            var fields = @class.ChildNodes().OfType<FieldDeclarationSyntax>().ToList();
+            if (fields.Count > 0)
+                Console.WriteLine("Fields:\n  " +
+                                  String.Join("\n  ",
+                                              fields.Select(
+                                                  f =>
+                                                  f.ToString() + " -> " +
+                                                  String.Join(", ", f.AttributeLists.SelectMany(atr => atr.Attributes)))));
+
+            var properties = @class.ChildNodes().OfType<PropertyDeclarationSyntax>().ToList();
+            if (properties.Count > 0)
+            {
+                Console.WriteLine("Properties:\n  " +
+                                  String.Join("\n  ",
+                                              properties.Select(
+                                                  p =>
+                                                  p.Modifiers + " " + p.Type + " " + p.Identifier + " " + p.AccessorList +
+                                                  " -> " +
+                                                  String.Join(", ", p.AttributeLists.SelectMany(atr => atr.Attributes)))));
+
+                foreach (var property in properties)
+                {
+                    foreach (var attribute in property.AttributeLists
+                                .SelectMany(attributeList => 
+                                            attributeList.Attributes.Where(attribute => attribute.Name.ToString() == "ParamsWithSteps")))
+                    {
+                        var args = String.Join(", ",
+                                               attribute.ArgumentList.Arguments.Select(
+                                                   arg => (int) ((arg.Expression as LiteralExpressionSyntax).Token.Value)));
+                        Console.WriteLine("MATCH: " + attribute.Name + " -> " + args);
+                        
+                        var arguments = (from argument in attribute.ArgumentList.Arguments
+                                         select argument.Expression as LiteralExpressionSyntax
+                                         into expression
+                                         where expression != null && expression.Token.Value is int
+                                         select (int) expression.Token.Value).ToList();
+
+                        if (arguments.Count != 3) 
+                            continue;
+
+                        Console.WriteLine("RESULT: " + property.Identifier.ToString() + " -> " + String.Join(", ", arguments));
+                        return
+                            Tuple.Create(
+                                new ParamsWithStepsAttribute(arguments[0], arguments[1], arguments[2]),
+                                property.Identifier.ToString());
+                    }
+                }
+            }
+
+            return Tuple.Create<ParamsWithStepsAttribute, String>(null, null);
         }
 
         private bool ShouldGenerateBlackhole(TypeSyntax returnType)
@@ -122,14 +168,6 @@ namespace MiniBench
                                      m.InjectedArgs);
             });
             Console.WriteLine(String.Join("\n", methodInfoText));
-        }
-
-        private static IList<T> NodesOfType<T>(SyntaxTree tree)
-        {
-            return tree.GetRoot()
-                       .DescendantNodes()
-                       .OfType<T>()
-                       .ToList();
         }
     }
 }

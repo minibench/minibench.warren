@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Text;
-using MiniBench.Core;
+﻿using System.Text;
 
 namespace MiniBench
 {
@@ -74,9 +72,10 @@ namespace MiniBench.Benchmarks
 
                 //System.Diagnostics.Debugger.Launch();
 
+                Stopwatch stopwatch = new Stopwatch();
+
                 ##PARAMS-START-CODE##
 
-                Stopwatch stopwatch = new Stopwatch();
                 long ticks = (long)(Stopwatch.Frequency * options.WarmupTime.TotalSeconds);
                 stopwatch.Reset();
                 stopwatch.Start();
@@ -151,7 +150,7 @@ namespace MiniBench.Benchmarks
             if (info.ParamsWithSteps != null && info.ParamsFieldName != null)
             {
                 paramsStartCode =
-"for int param = " + info.ParamsWithSteps.Start + "; param <= " + info.ParamsWithSteps.End + "; param += " + info.ParamsWithSteps.Step +
+"for (int param = " + info.ParamsWithSteps.Start + "; param <= " + info.ParamsWithSteps.End + "; param += " + info.ParamsWithSteps.Step + ")" +
 "\n{\n" + "benchmarkClass." + info.ParamsFieldName + " = param;\n";
 
                 paramsEndCode = "}\n";
