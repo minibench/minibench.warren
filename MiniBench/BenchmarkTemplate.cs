@@ -79,7 +79,8 @@ namespace MiniBench.Benchmarks
                 if (options.WarmupRuns > 0)
                 {
                     long ticks = (long)(Stopwatch.Frequency * options.WarmupTime.TotalSeconds);
-                    stopwatch.Restart();
+                    stopwatch.Reset();
+                    stopwatch.Start();
                     while (stopwatch.ElapsedTicks < ticks)
                     {
                         ##WARMUP-METHOD-CALL##;
@@ -108,7 +109,8 @@ namespace MiniBench.Benchmarks
                 {
                     iterations.Batch = batch;
                     profiler.BeforeIteration();
-                    stopwatch.Restart();
+                    stopwatch.Reset();
+                    stopwatch.Start();
                     for (iterations.Count = 0; iterations.Count < iterations.TotalCount; iterations.Count++)
                     {
                         ##BENCHMARK-METHOD-CALL##;
