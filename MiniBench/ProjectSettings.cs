@@ -7,17 +7,15 @@ namespace MiniBench
     internal class ProjectSettings
     {
         public string RootFolder { get; private set; }
-
         public string ProjectPath { get; private set; }
 
         public string OutputFileName { get; private set; }
-
         public string OutputFileExtension { get; private set; }
 
         public LanguageVersion TargetFrameworkVersion { get; private set; }
+        public bool AllowUnsafe { get; private set; }
 
         public IEnumerable<string> SourceFiles { get; private set; }
-
         public IEnumerable<Tuple<string, string>> References { get; private set; }
 
         public ProjectSettings(string projectPath, 
@@ -25,6 +23,7 @@ namespace MiniBench
                                 string outputFileName, 
                                 string outputFileExtension, 
                                 LanguageVersion targetFrameworkVersion, 
+                                bool unsafeAllowed,
                                 IEnumerable<String> sourceFiles, 
                                 IEnumerable<Tuple<String, String>> references)
         {
@@ -33,6 +32,7 @@ namespace MiniBench
             OutputFileName = outputFileName;
             OutputFileExtension = outputFileExtension;
             TargetFrameworkVersion = targetFrameworkVersion;
+            AllowUnsafe = unsafeAllowed;
             SourceFiles = sourceFiles;
             References = references;
         }

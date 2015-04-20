@@ -139,7 +139,8 @@ namespace MiniBench
             var compilationOptions = new CSharpCompilationOptions(
                                             outputKind: OutputKind.ConsoleApplication,
                                             mainTypeName: "MiniBench.Benchmarks.Program",
-                                            optimizationLevel: OptimizationLevel.Release);
+                                            optimizationLevel: OptimizationLevel.Release,
+                                            allowUnsafe: projectSettings.AllowUnsafe);
 
             // One call here will be sloooowww (probably Create() or Emit()), because it causes a load/JIT of certain parts of Roslyn
             // see https://roslyn.codeplex.com/discussions/573503 for a full explanation (JITting of Roslyn dll's is the main cause)

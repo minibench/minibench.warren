@@ -64,6 +64,10 @@ namespace MiniBench.Benchmarks
                 //System.Diagnostics.Debugger.Launch();
                 //System.Diagnostics.Debugger.Break();
 
+                Stopwatch stopwatch = new Stopwatch();
+
+                ##PARAMS-START-CODE##
+
                 // Make sure the method is JIT-compiled.
                 ##WARMUP-METHOD-CALL##;
 
@@ -71,10 +75,6 @@ namespace MiniBench.Benchmarks
                 GC.WaitForPendingFinalizers();
 
                 //System.Diagnostics.Debugger.Launch();
-
-                Stopwatch stopwatch = new Stopwatch();
-
-                ##PARAMS-START-CODE##
 
                 if (options.WarmupRuns > 0)
                 {

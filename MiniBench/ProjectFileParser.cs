@@ -26,11 +26,11 @@ namespace MiniBench
                 GetOutputFileName(xmldoc, mgr),
                 GetOutputFileExtension(xmldoc, mgr),
                 GetTargetFrameworkVersion(xmldoc, mgr),
+                GetUnsafeAllowed(xmldoc, mgr),
                 GetSourceFiles(xmldoc, mgr),
                 GetReferences(xmldoc, mgr)
             );
         }
-
 
         private String GetOutputFileName(XmlDocument xmldoc, XmlNamespaceManager mgr)
         {
@@ -83,6 +83,20 @@ namespace MiniBench
 
             Console.WriteLine("TargetFrameworkVersion: {0} -> {1}", (item != null ? item.InnerText : "<NULL>"), languageVersion);
             return languageVersion;
+        }
+
+        private bool GetUnsafeAllowed(XmlDocument xmldoc, XmlNamespaceManager mgr)
+        {
+            // <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+            var allowUnsafe = false;
+            XmlNode item = xmldoc.SelectSingleNode("//x:AllowUnsafeBlocks", mgr);
+            if (item != null && String.Compare("true", item.InnerText, StringComparison.InvariantCultureIgnoreCase) == 0)
+            {
+                allowUnsafe = true;
+            }
+
+            Console.WriteLine("AllowUnsafe: {0} -> {1}", (item != null ? item.InnerText : "<NULL>"), allowUnsafe);
+            return allowUnsafe;
         }
 
         private IEnumerable<string> GetSourceFiles(XmlDocument xmldoc, XmlNamespaceManager mgr)

@@ -29,7 +29,7 @@ namespace MiniBench
                     return -1;
                 }
 
-                Console.WriteLine("Compiling Benchmark code into an self-contained Benchmark.exe using:\n\t{0}\n", projectFileName);
+                Console.WriteLine("Compiling Benchmark code into an self-contained .exe using:\n\t{0}\n", projectFileName);
                 var projectParser = new ProjectFileParser();
                 var projectSettings = projectParser.ParseProjectFile(projectFileName);
 

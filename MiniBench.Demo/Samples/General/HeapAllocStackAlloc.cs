@@ -7,15 +7,17 @@ namespace MiniBench.Demo.Samples.General
     // and https://github.com/dotnet/coreclr/issues/430#issuecomment-85823468
     class HeapAllocStackAlloc
     {
+        // Duplicate 'ParamsWithSteps' attribute
         //[ParamsWithSteps(start:10, end:4010, step:500)]
-        [ParamsWithSteps(start:6000, end:96000, step:10000)] // Duplicate 'ParamsWithSteps' attribute
-        public long ArraySize = 0;
+        [ParamsWithSteps(start:6000, end:96000, step:10000)]
+        public int ArraySize = 0;
 
         [Benchmark]
         public int GetSquareHeapAlloc(IterationParams iteration)
         {
             int[] someNumbers = new int[ArraySize];
-            int value = (int)(iteration.Count % ArraySize);
+            int value = (int) iteration.Count % ArraySize;
+
             for (int i = 0; i < someNumbers.Length; ++i)
             {
                 someNumbers[i] = value;
@@ -24,15 +26,18 @@ namespace MiniBench.Demo.Samples.General
             return someNumbers[value];
         }
 
-        //public unsafe int GetSquareStackAlloc(int value)
-        //{
-        //    int* someNumbers = stackalloc int[ArraySize];
-        //    for (int i = 0; i < ArraySize; ++i)
-        //    {
-        //        someNumbers[i] = value;
-        //    }
+        [Benchmark]
+        public unsafe int GetSquareStackAlloc(IterationParams iteration)
+        {
+            int* someNumbers = stackalloc int[ArraySize];
+            int value = (int) iteration.Count % ArraySize;
 
-        //    return someNumbers[value];
-        //}
+            for (int i = 0; i < ArraySize; ++i)
+            {
+                someNumbers[i] = value;
+            }
+
+            return someNumbers[value];
+        }
     }
 }
