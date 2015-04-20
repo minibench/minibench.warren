@@ -45,14 +45,18 @@ namespace MiniBench
             Console.WriteLine("\nTook {0} ({1,7:N2}ms) - to delete existing files from disk\n", fileDeletionTimer.Elapsed, fileDeletionTimer.ElapsedMilliseconds);
 
             var allSyntaxTrees = new List<SyntaxTree>(GenerateEmbeddedCode());
+            var analyser = new Analyser();
             foreach (var file in projectSettings.SourceFiles.Where(f => f.StartsWith("Properties\\") == false))
             {
                 Console.WriteLine("Processing file: " + file);
-                var code = File.ReadAllText(Path.Combine(projectSettings.RootFolder, file));
-                var benchmarkTree = CSharpSyntaxTree.ParseText(code, options: parseOptions);
+                var filePath = Path.Combine(projectSettings.RootFolder, file);
+                var code = File.ReadAllText(filePath);
+                var benchmarkTree = CSharpSyntaxTree.ParseText(code, options: parseOptions, path: filePath, encoding: defaultEncoding);
 
-                var analyser = new Analyser();
+                var analysisTimer = Stopwatch.StartNew();
                 var benchmarkInfo = analyser.AnalyseBenchmark(benchmarkTree, filePrefix);
+                analysisTimer.Stop();
+                Console.WriteLine("Took {0} ({1,7:N2}ms) - to analyse the benchmark code", analysisTimer.Elapsed, analysisTimer.ElapsedMilliseconds);
 
                 allSyntaxTrees.Add(benchmarkTree);
 
@@ -192,7 +196,7 @@ namespace MiniBench
             {
                 // As MiniBench.exe runs as a .NET 4.0 (or 4.5) process (due to the Roslyn dependancy)
                 // We can just get the .NET 4.0 runtimes components in the normal way
-                // Using typeof(..) means it get's the best match for us, for instance from the GAC
+                // Using typeof(..) means it gets the best match for us, for instance from the GAC
 
                 // This pulls in mscorlib.dll 
                 standardReferences.Add(MetadataReference.CreateFromAssembly(typeof(String).Assembly));

@@ -53,7 +53,6 @@
   <ItemGroup>
     <Compile Include="Samples\General\HeapAllocStackAlloc.cs" />
     <Compile Include="Samples\General\JonSkeetReadonlyFields.cs" />
-    <Compile Include="SampleBenchmark.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Samples\JMH\JMH_10_ConstantFolding.cs" />
     <Compile Include="Samples\JMH\JMH_08_DeadCodeElimination.cs" />

@@ -1,5 +1,4 @@
-﻿using System;
-using MiniBench.Core;
+﻿using MiniBench.Core;
 
 namespace MiniBench.Demo.Samples.General
 {
@@ -8,9 +7,9 @@ namespace MiniBench.Demo.Samples.General
     // and https://github.com/dotnet/coreclr/issues/430#issuecomment-85823468
     class HeapAllocStackAlloc
     {
-        [ParamsWithSteps(start:10, end:4010, step:500)]
-        //[ParamsWithSteps(6000, 96000, 10000)] // Duplicate 'ParamsWithSteps' attribute
-        public int ArraySize = 86000;
+        //[ParamsWithSteps(start:10, end:4010, step:500)]
+        [ParamsWithSteps(start:6000, end:96000, step:10000)] // Duplicate 'ParamsWithSteps' attribute
+        public int ArraySize = 0;
 
         [Benchmark]
         public int GetSquareHeapAlloc(IterationParams iteration)
@@ -21,8 +20,6 @@ namespace MiniBench.Demo.Samples.General
             {
                 someNumbers[i] = value;
             }
-
-            Console.WriteLine("{0} of {1}", iteration.Count, iteration.TotalCount);
 
             return someNumbers[value];
         }

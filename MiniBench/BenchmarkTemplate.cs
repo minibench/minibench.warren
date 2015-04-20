@@ -145,13 +145,13 @@ namespace MiniBench.Benchmarks
             var benchmarkMethodCall = GetMethodCallWithParameters(info);
             var warmupMethodCall = GetMethodCallWithParameters(info, warmupMethod: true);
 
+            // TODO this currently produces code with wierd/no indenting, fix this when we have a better templating mechanism
             string paramsStartCode = "", paramsEndCode = "";
-
             if (info.ParamsWithSteps != null && info.ParamsFieldName != null)
             {
                 paramsStartCode =
 "for (int param = " + info.ParamsWithSteps.Start + "; param <= " + info.ParamsWithSteps.End + "; param += " + info.ParamsWithSteps.Step + ")" +
-"\n{\n" + "benchmarkClass." + info.ParamsFieldName + " = param;\n";
+"\n{\n" + "benchmarkClass." + info.ParamsFieldName + " = param;\nConsole.WriteLine(\"Param = \" + " + "benchmarkClass." + info.ParamsFieldName + ");";
 
                 paramsEndCode = "}\n";
             }
