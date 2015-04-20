@@ -28,8 +28,7 @@ namespace Features
 
             Console.WriteLine("demoTestRunCount = {0}, params.Count = {1}, params = {2}", _demoTestRunCount, _params.Count, String.Join(", ", _params));
             Assert.True(_demoTestRunCount > 0, "Expected the Benchmark method to be run at least once: " + _demoTestRunCount);
-            // We get 0 passed in during warm-up, so include that as well!!
-            Assert.Equal(Enumerable.Range(0, 11), _params);
+            Assert.Equal(Enumerable.Range(1, 10), _params);
         }
 
 #pragma warning disable 649 // we know that the Benchmark with write/read this field
@@ -71,8 +70,7 @@ namespace Features
 
             Console.WriteLine("demoTestRunCount = {0}, params.Count = {1}, params = {2}", _demoTestRunCount, _params.Count, String.Join(", ", _params));
             Assert.True(_demoTestRunCount > 0, "Expected the Benchmark method to be run at least once: " + _demoTestRunCount);
-            // We get 0 passed in during warm-up, so include that as well!!
-            Assert.Equal(Enumerable.Range(0, 11), _params);
+            Assert.Equal(Enumerable.Range(1, 10), _params);
         }
 
         // This must be public, writable and field/property?!?
