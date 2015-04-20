@@ -1,13 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2011/10/nuspec.xsd">
     <metadata>
-        <id>MiniBench</id>
+        <id>Minibench</id>
         <version>0.1.0-beta</version>
-        <title>MiniBench</title>
-        <authors>Matt Warren</authors>
-        <owners>Matt Warren</owners>
+        <title>Minibench</title>
+        <authors>Matt Warren and Jon Skeet</authors>
+        <owners>Matt Warren and Jon Skeet</owners>
         <licenseUrl>http://LICENSE_URL_HERE_OR_DELETE_THIS_LINE</licenseUrl>
-        <projectUrl>https://github.com/mattwarren/MiniBench-WIP</projectUrl>
+        <projectUrl>https://github.com/Minibench/</projectUrl>
         <iconUrl>http://ICON_URL_HERE_OR_DELETE_THIS_LINE</iconUrl>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>A Benchmarking Tool</description>
