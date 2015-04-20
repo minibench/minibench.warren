@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("MiniBench.Core")]
-[assembly: AssemblyCopyright("Copyright ©  2014")]
+[assembly: AssemblyCopyright("Copyright © 2014")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -34,3 +34,11 @@ using System.Runtime.InteropServices;
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
+
+// Allow the integration tests to use a special mode, so that they can run faster than real Benchmarks
+[assembly: InternalsVisibleTo("ConsoleApp-2_0")]
+[assembly: InternalsVisibleTo("ConsoleApp-3_0")]
+[assembly: InternalsVisibleTo("ConsoleApp-3_5")]
+[assembly: InternalsVisibleTo("ConsoleApp-4_0")]
+[assembly: InternalsVisibleTo("ConsoleApp-4_5")]
+[assembly: InternalsVisibleTo("Features")]

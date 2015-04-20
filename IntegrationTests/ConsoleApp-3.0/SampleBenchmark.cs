@@ -32,6 +32,7 @@ namespace ConsoleApp_3_0
                     .Include(typeof(SampleBenchmark_3_0))
                     .WarmupRuns(0)
                     .Runs(1)
+                    .InvocationsPerRun(1)
                     .Build();
             new Runner(opt).Run();
 

@@ -13,8 +13,9 @@ namespace MiniBench.Core
         private readonly string benchmarkRegex;
         public string BenchmarkRegex { get { return benchmarkRegex; } }
 
-        public int WarmupRuns { get; private set; }
-        public int Runs { get; private set; }
+        public uint WarmupRuns { get; private set; }
+        public uint Runs { get; private set; }
+        public uint? InvocationsPerRun { get; private set; }
 
         private TimeSpan warmupTime = TimeSpan.FromSeconds(10);
         public TimeSpan WarmupTime { get { return warmupTime; } }
@@ -24,22 +25,27 @@ namespace MiniBench.Core
 
         private static readonly string GeneratedPrefix = "Generated_Runner";
 
-        public Options(Type benchmarkType, int warmupRuns, int runs)
+        internal Options(Type benchmarkType, uint warmupRuns, uint runs, uint? invocationsPerRun = null)
+            : this(warmupRuns, runs, invocationsPerRun)
         {
             this.benchmarkType = benchmarkType;
             this.benchmarkPrefix = string.Format("{0}_{1}_{2}",
                                             GeneratedPrefix,
                                             benchmarkType.Namespace.Replace('.', '_'),
                                             benchmarkType.Name);
-            WarmupRuns = warmupRuns;
-            Runs = runs;
         }
 
-        internal Options(String benchmarkRegex, int warmupRuns, int runs)
+        internal Options(String benchmarkRegex, uint warmupRuns, uint runs, uint? invocationsPerRun = null)
+            :this(warmupRuns, runs, invocationsPerRun)
         {
             this.benchmarkRegex = benchmarkRegex;
+        }
+
+        private Options(uint warmupRuns, uint runs, uint? invocationsPerRun = null)
+        {
             WarmupRuns = warmupRuns;
             Runs = runs;
+            InvocationsPerRun = invocationsPerRun;
         }
     }
 }

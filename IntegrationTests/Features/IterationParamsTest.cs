@@ -8,8 +8,8 @@ namespace Features
     {
         // This has to be static for the test to work!! 
         // The Benchmark Runner new's up a new instance of this class!!
-        private static int _demoTestRunCount;
-        private static int _iterationsCounter;
+        private static long _demoTestRunCount;
+        private static long _iterationsCounter;
 
         [Fact]
         public void BasicTest()

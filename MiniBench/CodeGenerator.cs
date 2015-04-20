@@ -196,7 +196,7 @@ namespace MiniBench
             {
                 // As MiniBench.exe runs as a .NET 4.0 (or 4.5) process (due to the Roslyn dependancy)
                 // We can just get the .NET 4.0 runtimes components in the normal way
-                // Using typeof(..) means it gets the best match for us, for instance from the GAC
+                // Using typeof(..) means we get the best match, for instance from the GAC
 
                 // This pulls in mscorlib.dll 
                 standardReferences.Add(MetadataReference.CreateFromAssembly(typeof(String).Assembly));

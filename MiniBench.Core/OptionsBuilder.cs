@@ -8,8 +8,10 @@ namespace MiniBench.Core
         private String benchmarkRegex;
 
         private bool useType = false;
-        private int runs = 5;       // Default to 5 runs
-        private int warmupRuns = 5; // Default to 5 warmup runs
+        private uint runs = 5;       // Default to 5 runs
+        private uint warmupRuns = 5; // Default to 5 warmup runs
+
+        private uint? invocationsPerRun = null;
 
         public OptionsBuilder Include(Type benchmarkType)
         {
@@ -25,24 +27,33 @@ namespace MiniBench.Core
             return this;
         }
 
-        public OptionsBuilder WarmupRuns(int warmupRuns)
+        public OptionsBuilder WarmupRuns(uint warmupRuns)
         {
             this.warmupRuns = warmupRuns;
             return this;
         }
 
-        public OptionsBuilder Runs(int runs)
+        public OptionsBuilder Runs(uint runs)
         {
             this.runs = runs;
+            return this;
+        }
+
+        /// <summary>
+        /// This is just here for integration testing, it SHOULDN'T be used in real benchmarks
+        /// </summary>
+        internal OptionsBuilder InvocationsPerRun(uint invocationsPerRun)
+        {
+            this.invocationsPerRun = invocationsPerRun;
             return this;
         }
 
         public Options Build()
         {
             if (useType)
-                return new Options(benchmarkType, warmupRuns: warmupRuns, runs: runs);
+                return new Options(benchmarkType, warmupRuns: warmupRuns, runs: runs, invocationsPerRun: invocationsPerRun);
 
-            return new Options(benchmarkRegex, warmupRuns: warmupRuns, runs: runs);
+            return new Options(benchmarkRegex, warmupRuns: warmupRuns, runs: runs, invocationsPerRun: invocationsPerRun);
         }
     }
 }

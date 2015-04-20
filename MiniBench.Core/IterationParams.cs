@@ -15,8 +15,8 @@
     /// </summary>
     public class IterationParams
     {
-        public int Count { get; internal set; }
-        public int TotalCount { get; internal set; }
-        public int Batch { get; internal set; }
+        public long Count { get; internal set; }
+        public long TotalCount { get; internal set; }
+        public long Batch { get; internal set; }
     }
 }

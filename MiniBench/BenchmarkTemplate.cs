@@ -76,22 +76,34 @@ namespace MiniBench.Benchmarks
 
                 ##PARAMS-START-CODE##
 
-                long ticks = (long)(Stopwatch.Frequency * options.WarmupTime.TotalSeconds);
-                stopwatch.Reset();
-                stopwatch.Start();
-                while (stopwatch.ElapsedTicks < ticks)
+                if (options.WarmupRuns > 0)
                 {
-                    ##WARMUP-METHOD-CALL##;
-                    warmupIterations.Count++;
-                }
-                stopwatch.Stop();
-                Console.WriteLine(""Warmup:    {0,12:N0} iterations in {1,10:N3} ms, {2,6:N3} ns/op"", 
-                                    warmupIterations.Count, stopwatch.Elapsed.TotalMilliseconds, Utils.TicksToNanoseconds(stopwatch) / warmupIterations.Count);
+                    long ticks = (long)(Stopwatch.Frequency * options.WarmupTime.TotalSeconds);
+                    stopwatch.Reset();
+                    stopwatch.Start();
+                    while (stopwatch.ElapsedTicks < ticks)
+                    {
+                        ##WARMUP-METHOD-CALL##;
+                        warmupIterations.Count++;
+                    }
+                    stopwatch.Stop();
+                    Console.WriteLine(""Warmup:    {0,12:N0} iterations in {1,10:N3} ms, {2,6:N3} ns/op"", 
+                                        warmupIterations.Count, stopwatch.Elapsed.TotalMilliseconds, Utils.TicksToNanoseconds(stopwatch) / warmupIterations.Count);
 
-                double ratio = options.TargetTime.TotalSeconds / stopwatch.Elapsed.TotalSeconds;
-                iterations.TotalCount = (int)(warmupIterations.Count * ratio);
+                    double ratio = options.TargetTime.TotalSeconds / stopwatch.Elapsed.TotalSeconds;
+                    iterations.TotalCount = (int)(warmupIterations.Count * ratio);
+                }
+                else
+                {
+                    // TODO - work out a sensible value for this!!
+                    iterations.TotalCount = 10000;
+                }
+
                 GC.Collect();
                 GC.WaitForPendingFinalizers();
+
+                if (options.InvocationsPerRun != null)
+                        iterations.TotalCount = (int)options.InvocationsPerRun;
 
                 for (int batch = 0; batch < options.Runs; batch++)
                 {
@@ -99,6 +111,7 @@ namespace MiniBench.Benchmarks
                     profiler.BeforeIteration();
                     stopwatch.Reset();
                     stopwatch.Start();
+
                     for (iterations.Count = 0; iterations.Count < iterations.TotalCount; iterations.Count++)
                     {
                         ##BENCHMARK-METHOD-CALL##;

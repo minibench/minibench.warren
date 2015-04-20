@@ -9,13 +9,13 @@ namespace MiniBench.Demo.Samples.General
     {
         //[ParamsWithSteps(start:10, end:4010, step:500)]
         [ParamsWithSteps(start:6000, end:96000, step:10000)] // Duplicate 'ParamsWithSteps' attribute
-        public int ArraySize = 0;
+        public long ArraySize = 0;
 
         [Benchmark]
         public int GetSquareHeapAlloc(IterationParams iteration)
         {
             int[] someNumbers = new int[ArraySize];
-            int value = iteration.Count % ArraySize;
+            int value = (int)(iteration.Count % ArraySize);
             for (int i = 0; i < someNumbers.Length; ++i)
             {
                 someNumbers[i] = value;

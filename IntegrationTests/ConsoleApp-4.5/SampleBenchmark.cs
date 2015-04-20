@@ -44,6 +44,7 @@ namespace ConsoleApp_4_5
                     .Include(typeof(SampleBenchmark_4_5))
                     .WarmupRuns(0)
                     .Runs(1)
+                    .InvocationsPerRun(1)
                     .Build();
             new Runner(opt).Run();
 

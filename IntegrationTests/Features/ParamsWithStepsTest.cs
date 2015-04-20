@@ -22,12 +22,13 @@ namespace Features
                     .Include(this.GetType())
                     .WarmupRuns(0)
                     .Runs(1)
+                    .InvocationsPerRun(1)
                     .Build();
             new Runner(opt).Run();
 
             Console.WriteLine("demoTestRunCount = {0}, params.Count = {1}, params = {2}", _demoTestRunCount, _params.Count, String.Join(", ", _params));
             Assert.True(_demoTestRunCount > 0, "Expected the Benchmark method to be run at least once: " + _demoTestRunCount);
-            // We get 0 (default(int)) passed in during warm-up, so include that as well!!
+            // We get 0 passed in during warm-up, so include that as well!!
             Assert.Equal(Enumerable.Range(0, 11), _params);
         }
 
@@ -64,12 +65,13 @@ namespace Features
                     .Include(this.GetType())
                     .WarmupRuns(0)
                     .Runs(1)
+                    .InvocationsPerRun(1)
                     .Build();
             new Runner(opt).Run();
 
             Console.WriteLine("demoTestRunCount = {0}, params.Count = {1}, params = {2}", _demoTestRunCount, _params.Count, String.Join(", ", _params));
             Assert.True(_demoTestRunCount > 0, "Expected the Benchmark method to be run at least once: " + _demoTestRunCount);
-            // We get 0 (default(int)) passed in during warm-up, so include that as well!!
+            // We get 0 passed in during warm-up, so include that as well!!
             Assert.Equal(Enumerable.Range(0, 11), _params);
         }
 
