@@ -28,7 +28,7 @@ namespace Features
             Console.WriteLine("demoTestRunCount = {0}, params.Count = {1}, params = {2}", _demoTestRunCount, _params.Count, String.Join(", ", _params));
             Assert.True(_demoTestRunCount > 0, "Expected the Benchmark method to be run at least once: " + _demoTestRunCount);
             // We get 0 (default(int)) passed in during warm-up, so include that as well!!
-            Assert.Equal(Enumerable.Range(0, 10), _params);
+            Assert.Equal(Enumerable.Range(0, 11), _params);
         }
 
         [ParamsWithSteps(start:1, end:10, step:1)]
