@@ -42,7 +42,7 @@ namespace MiniBench
                 File.Delete(existingGeneratedFile);
             }
             fileDeletionTimer.Stop();
-            Console.WriteLine("\nTook {0} ({1,7:N2}ms) - to delete existing files from disk\n", fileDeletionTimer.Elapsed, fileDeletionTimer.ElapsedMilliseconds);
+            Console.WriteLine("\nTook {0} ({1,7:N2} ms) - to delete existing files from disk\n", fileDeletionTimer.Elapsed, fileDeletionTimer.Elapsed.TotalMilliseconds);
 
             var allSyntaxTrees = new List<SyntaxTree>(GenerateEmbeddedCode());
             var analyser = new Analyser();
@@ -56,7 +56,7 @@ namespace MiniBench
                 var analysisTimer = Stopwatch.StartNew();
                 var benchmarkInfo = analyser.AnalyseBenchmark(benchmarkTree, filePrefix);
                 analysisTimer.Stop();
-                Console.WriteLine("Took {0} ({1,7:N2}ms) - to analyse the benchmark code", analysisTimer.Elapsed, analysisTimer.ElapsedMilliseconds);
+                Console.WriteLine("Took {0} ({1,7:N2} ms) - to analyse the benchmark code", analysisTimer.Elapsed, analysisTimer.Elapsed.TotalMilliseconds);
 
                 allSyntaxTrees.Add(benchmarkTree);
 
@@ -81,12 +81,12 @@ namespace MiniBench
                 var generatedRunnerTree = CSharpSyntaxTree.ParseText(generatedBenchmark, options: parseOptions, path: outputFileName, encoding: defaultEncoding);
                 generatedRunners.Add(generatedRunnerTree);
                 codeGenTimer.Stop();
-                Console.WriteLine("Took {0} ({1,7:N2}ms) - to generate CSharp Syntax Tree", codeGenTimer.Elapsed, codeGenTimer.ElapsedMilliseconds);
+                Console.WriteLine("Took {0} ({1,7:N2} ms) - to generate CSharp Syntax Tree", codeGenTimer.Elapsed, codeGenTimer.Elapsed.TotalMilliseconds);
 
                 var fileWriteTimer = Stopwatch.StartNew();
                 File.WriteAllText(outputFileName, generatedRunnerTree.GetRoot().ToFullString(), encoding: defaultEncoding);
                 fileWriteTimer.Stop();
-                Console.WriteLine("Took {0} ({1,7:N2}ms) - to write file to disk", fileWriteTimer.Elapsed, fileWriteTimer.ElapsedMilliseconds);
+                Console.WriteLine("Took {0} ({1,7:N2} ms) - to write file to disk", fileWriteTimer.Elapsed, fileWriteTimer.Elapsed.TotalMilliseconds);
                 Console.WriteLine("Generated file: {0}\n", info.FileName);
             }
             return generatedRunners;
@@ -99,12 +99,12 @@ namespace MiniBench
             var codeGenTimer = Stopwatch.StartNew();
             var generatedLauncherTree = CSharpSyntaxTree.ParseText(generatedLauncher, options: parseOptions, path: outputFileName, encoding: defaultEncoding);
             codeGenTimer.Stop();
-            Console.WriteLine("Took {0} ({1,7:N2}ms) - to generate CSharp Syntax Tree", codeGenTimer.Elapsed, codeGenTimer.ElapsedMilliseconds);
+            Console.WriteLine("Took {0} ({1,7:N2} ms) - to generate CSharp Syntax Tree", codeGenTimer.Elapsed, codeGenTimer.Elapsed.TotalMilliseconds);
 
             var fileWriteTimer = Stopwatch.StartNew();
             File.WriteAllText(outputFileName, generatedLauncherTree.GetRoot().ToFullString(), encoding: defaultEncoding);
             fileWriteTimer.Stop();
-            Console.WriteLine("Took {0} ({1,7:N2}ms) - to write file to disk", fileWriteTimer.Elapsed, fileWriteTimer.ElapsedMilliseconds);
+            Console.WriteLine("Took {0} ({1,7:N2} ms) - to write file to disk", fileWriteTimer.Elapsed, fileWriteTimer.Elapsed.TotalMilliseconds);
             Console.WriteLine("Generated file: " + launcherFileName);
 
             return generatedLauncherTree;
@@ -148,7 +148,7 @@ namespace MiniBench
             var compilationTimer = Stopwatch.StartNew();
             var compilation = CSharpCompilation.Create(projectSettings.OutputFileName, allSyntaxTrees, GetRequiredReferences(), compilationOptions);
             compilationTimer.Stop();
-            Console.WriteLine("\nTook {0} ({1,7:N2}ms) - to create the CSharpCompilation", compilationTimer.Elapsed, compilationTimer.ElapsedMilliseconds);
+            Console.WriteLine("\nTook {0} ({1,7:N2} ms) - to create the CSharpCompilation", compilationTimer.Elapsed, compilationTimer.Elapsed.TotalMilliseconds);
             Console.WriteLine("\nCurrent directory: " + Environment.CurrentDirectory);
 
             // TODO fix this IOException (happens if the file is still being used whilst we are trying to "re-write" it)
@@ -162,7 +162,7 @@ namespace MiniBench
                                                     pdbPath: projectSettings.OutputFileName + ".pdb",
                                                     xmlDocPath: projectSettings.OutputFileName + ".xml");
             codeEmitToDiskTimer.Stop();
-            Console.WriteLine("Took {0} ({1,7:N2}ms) - to emit generated code to DISK", codeEmitToDiskTimer.Elapsed, codeEmitToDiskTimer.ElapsedMilliseconds);
+            Console.WriteLine("Took {0} ({1,7:N2} ms) - to emit generated code to DISK", codeEmitToDiskTimer.Elapsed, codeEmitToDiskTimer.Elapsed.TotalMilliseconds);
             Console.WriteLine("Emit to DISK Success: {0}", emitToDiskResult.Success);
             if (emitToDiskResult.Diagnostics.Length > 0)
             {

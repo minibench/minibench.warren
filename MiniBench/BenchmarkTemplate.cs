@@ -79,8 +79,7 @@ namespace MiniBench.Benchmarks
                 if (options.WarmupRuns > 0)
                 {
                     long ticks = (long)(Stopwatch.Frequency * options.WarmupTime.TotalSeconds);
-                    stopwatch.Reset();
-                    stopwatch.Start();
+                    stopwatch.Restart();
                     while (stopwatch.ElapsedTicks < ticks)
                     {
                         ##WARMUP-METHOD-CALL##;
@@ -103,15 +102,13 @@ namespace MiniBench.Benchmarks
                 GC.WaitForPendingFinalizers();
 
                 if (options.InvocationsPerRun != null)
-                        iterations.TotalCount = (int)options.InvocationsPerRun;
+                    iterations.TotalCount = (int)options.InvocationsPerRun;
 
                 for (int batch = 0; batch < options.Runs; batch++)
                 {
                     iterations.Batch = batch;
                     profiler.BeforeIteration();
-                    stopwatch.Reset();
-                    stopwatch.Start();
-
+                    stopwatch.Restart();
                     for (iterations.Count = 0; iterations.Count < iterations.TotalCount; iterations.Count++)
                     {
                         ##BENCHMARK-METHOD-CALL##;
@@ -127,7 +124,7 @@ namespace MiniBench.Benchmarks
 
                 ##PARAMS-END-CODE##
 
-                // Need to collect the results from the multiple ""params"" runs and return a list, now a single result
+                // Need to collect the results from the multiple ""params"" runs and return a list, not a single result
                 return BenchmarkResult.ForSuccess(this, iterations.TotalCount, stopwatch.Elapsed);
             }
             catch (Exception e)
