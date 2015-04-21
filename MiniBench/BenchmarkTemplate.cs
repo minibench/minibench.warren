@@ -65,9 +65,7 @@ namespace MiniBench.Benchmarks
                 //System.Diagnostics.Debugger.Break();
 
                 Stopwatch stopwatch = new Stopwatch();
-
                 ##PARAMS-START-CODE##
-
                 // Make sure the method is JIT-compiled.
                 ##WARMUP-METHOD-CALL##;
 
@@ -123,9 +121,7 @@ namespace MiniBench.Benchmarks
 
                     profiler.PrintIterationResults();
                 }
-
                 ##PARAMS-END-CODE##
-
                 // Need to collect the results from the multiple ""params"" runs and return a list, not a single result
                 return BenchmarkResult.ForSuccess(this, iterations.TotalCount, stopwatch.Elapsed);
             }
@@ -157,13 +153,23 @@ namespace MiniBench.Benchmarks
             var benchmarkMethodCall = GetMethodCallWithParameters(info);
             var warmupMethodCall = GetMethodCallWithParameters(info, warmupMethod: true);
 
-            // TODO this currently produces code with wierd/no indenting, fix this when we have a better templating mechanism
+            // We know we produce code with wierd/no formatting, but later on we use Roslyn to fix it for us!!
+            // See Formatter.Format() call in GenerateRunners() in CodeGenerator.cs
             string paramsStartCode = "", paramsEndCode = "";
             if (info.ParamsWithSteps != null && info.ParamsFieldName != null)
             {
-                paramsStartCode =
-"for (int param = " + info.ParamsWithSteps.Start + "; param <= " + info.ParamsWithSteps.End + "; param += " + info.ParamsWithSteps.Step + ")" +
-"\n{\n" + "benchmarkClass." + info.ParamsFieldName + " = param;\nConsole.WriteLine(\"Param = \" + " + "benchmarkClass." + info.ParamsFieldName + ");";
+                var paramsStartCodeTemplate =
+@"for (int param = ##START##; param <= ##END##; param += ##STEP##)
+{
+    benchmarkClass.##PARAM-NAME## = param;
+    Console.WriteLine(""Param = "" + benchmarkClass.##PARAM-NAME##);
+";
+
+                paramsStartCode = paramsStartCodeTemplate
+                    .Replace("##START##", info.ParamsWithSteps.Start.ToString())
+                    .Replace("##END##", info.ParamsWithSteps.End.ToString())
+                    .Replace("##STEP##", info.ParamsWithSteps.Step.ToString())
+                    .Replace("##PARAM-NAME##", info.ParamsFieldName);
 
                 paramsEndCode = "}\n";
             }

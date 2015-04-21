@@ -1,5 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Formatting;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -73,18 +74,21 @@ namespace MiniBench
         private IEnumerable<SyntaxTree> GenerateRunners(IEnumerable<BenchmarkInfo> benchmarkInfo, string outputDirectory)
         {
             var generatedRunners = new List<SyntaxTree>(benchmarkInfo.Count());
+           
+
             foreach (var info in benchmarkInfo)
             {
                 var codeGenTimer = Stopwatch.StartNew();
                 var outputFileName = Path.Combine(outputDirectory, info.FileName);
                 var generatedBenchmark = BenchmarkTemplate.ProcessCodeTemplates(info);
                 var generatedRunnerTree = CSharpSyntaxTree.ParseText(generatedBenchmark, options: parseOptions, path: outputFileName, encoding: defaultEncoding);
-                generatedRunners.Add(generatedRunnerTree);
+                var formattedCode = FormatCode(generatedRunnerTree);
+                generatedRunners.Add(formattedCode);
                 codeGenTimer.Stop();
                 Console.WriteLine("Took {0} ({1,7:N2} ms) - to generate CSharp Syntax Tree", codeGenTimer.Elapsed, codeGenTimer.Elapsed.TotalMilliseconds);
 
                 var fileWriteTimer = Stopwatch.StartNew();
-                File.WriteAllText(outputFileName, generatedRunnerTree.GetRoot().ToFullString(), encoding: defaultEncoding);
+                File.WriteAllText(outputFileName, formattedCode.GetRoot().ToFullString(), encoding: defaultEncoding);
                 fileWriteTimer.Stop();
                 Console.WriteLine("Took {0} ({1,7:N2} ms) - to write file to disk", fileWriteTimer.Elapsed, fileWriteTimer.Elapsed.TotalMilliseconds);
                 Console.WriteLine("Generated file: {0}\n", info.FileName);
@@ -98,16 +102,26 @@ namespace MiniBench
             var outputFileName = Path.Combine(outputDirectory, launcherFileName);
             var codeGenTimer = Stopwatch.StartNew();
             var generatedLauncherTree = CSharpSyntaxTree.ParseText(generatedLauncher, options: parseOptions, path: outputFileName, encoding: defaultEncoding);
+            var formattedCode = FormatCode(generatedLauncherTree);
             codeGenTimer.Stop();
             Console.WriteLine("Took {0} ({1,7:N2} ms) - to generate CSharp Syntax Tree", codeGenTimer.Elapsed, codeGenTimer.Elapsed.TotalMilliseconds);
 
             var fileWriteTimer = Stopwatch.StartNew();
-            File.WriteAllText(outputFileName, generatedLauncherTree.GetRoot().ToFullString(), encoding: defaultEncoding);
+            File.WriteAllText(outputFileName, formattedCode.GetRoot().ToFullString(), encoding: defaultEncoding);
             fileWriteTimer.Stop();
             Console.WriteLine("Took {0} ({1,7:N2} ms) - to write file to disk", fileWriteTimer.Elapsed, fileWriteTimer.Elapsed.TotalMilliseconds);
             Console.WriteLine("Generated file: " + launcherFileName);
 
-            return generatedLauncherTree;
+            return formattedCode;
+        }
+
+        private readonly Workspace dummyWorkspace = new AdhocWorkspace();
+        private SyntaxTree FormatCode(SyntaxTree generatedCodeTree)
+        {
+            // Use Roslyn to format out generated code, saves us having to do it manually!!
+            var formattedRunnerTree = Formatter.Format(generatedCodeTree.GetRoot(), dummyWorkspace);
+            // TODO work out if there is a better way of applying our options (parseOptions)
+            return formattedRunnerTree.SyntaxTree.WithRootAndOptions(formattedRunnerTree, parseOptions);
         }
 
         private IEnumerable<SyntaxTree> GenerateEmbeddedCode()
