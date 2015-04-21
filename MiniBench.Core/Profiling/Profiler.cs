@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using MiniBench.Core.Infrastructure;
 
 namespace MiniBench.Core.Profiling
 {
@@ -8,7 +9,7 @@ namespace MiniBench.Core.Profiling
         internal readonly Dictionary<IInternalProfiler, AggregatedProfilerResult []> Profilers =
             new Dictionary<IInternalProfiler, AggregatedProfilerResult []>
             {
-                { new GCProfiler(), null }
+                //{ new GCProfiler(), null }
             };
 
         private CommandLineArgs arguments;
@@ -16,6 +17,8 @@ namespace MiniBench.Core.Profiling
         internal Profiler(CommandLineArgs arguments)
         {
             this.arguments = arguments;
+
+            //var profilerToRun = 
         }
 
         internal void BeforeIteration()

@@ -139,7 +139,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 
 // From https://github.com/mono/mono/blob/master/mcs/class/Mono.Options/Mono.Options/Options.cs
-namespace MiniBench.Core
+namespace MiniBench.Core.Infrastructure
 {
     static class StringCoda
     {

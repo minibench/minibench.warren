@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace MiniBench.Core
+namespace MiniBench.Core.Infrastructure
 {
     internal static class Utils
     {

@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Globalization;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using MiniBench.Core.Infrastructure;
 using MiniBench.Core.Profiling;
-using System.Globalization;
 
 namespace MiniBench.Core
 {

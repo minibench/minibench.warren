@@ -15,12 +15,13 @@ namespace MiniBench
         private static string paramsEndCodeReplaceText = "##PARAMS-END-CODE##";
 
         private static string benchmarkHarnessTemplate =
-@"using MiniBench.Core;
-using MiniBench.Core.Profiling;
-using ##NAMESPACE-NAME##;
-using System;
+@"using System;
 using System.Diagnostics;
 using System.Collections.ObjectModel;
+using MiniBench.Core;
+using MiniBench.Core.Infrastructure;
+using MiniBench.Core.Profiling;
+using ##NAMESPACE-NAME##;
 
 namespace MiniBench.Benchmarks
 {
@@ -143,7 +144,6 @@ namespace MiniBench.Benchmarks
         }
     }
 }";
-
 
         internal static string ProcessCodeTemplates(BenchmarkInfo info)
         {

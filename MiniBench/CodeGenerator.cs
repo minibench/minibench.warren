@@ -1,13 +1,13 @@
-﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Formatting;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Formatting;
 
 namespace MiniBench
 {
@@ -128,10 +128,13 @@ namespace MiniBench
         {
             var embeddedCodeTrees = new List<SyntaxTree>();
             var assembly = Assembly.GetExecutingAssembly();
+            var allowedNamespacePrefixes = new[]
+                {
+                    "MiniBench.Core.", "MiniBench.Profiling.", "MiniBench.Infrastructure."
+                };
             foreach (var codeFile in assembly.GetManifestResourceNames())
             {
-                if (codeFile.StartsWith("MiniBench.Core.") == false &&
-                    codeFile.StartsWith("MiniBench.Profiling.") == false)
+                if (allowedNamespacePrefixes.Any(ns => codeFile.StartsWith(ns)) == false)
                     continue;
 
                 using (Stream stream = assembly.GetManifestResourceStream(codeFile))

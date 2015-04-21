@@ -7,6 +7,7 @@
 using System.Reflection;
 using System.Collections.Generic;
 using MiniBench.Core;
+using MiniBench.Core.Infrastructure;
 using MiniBench.Core.Profiling;
 
 namespace MiniBench.Benchmarks
