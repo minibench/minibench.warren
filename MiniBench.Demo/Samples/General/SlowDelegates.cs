@@ -1,6 +1,6 @@
-﻿using MiniBench.Core;
-using System;
+﻿using System;
 using System.Runtime.CompilerServices;
+using MiniBench.Core;
 
 namespace MiniBench.Demo.Samples.General
 {

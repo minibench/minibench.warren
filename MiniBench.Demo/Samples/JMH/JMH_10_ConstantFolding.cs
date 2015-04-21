@@ -1,5 +1,5 @@
-﻿using MiniBench.Core;
-using System;
+﻿using System;
+using MiniBench.Core;
 
 namespace MiniBench.Demo.Samples.JMH
 {
