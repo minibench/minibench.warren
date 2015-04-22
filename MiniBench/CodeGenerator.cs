@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.Formatting;
 
 namespace MiniBench
@@ -43,7 +44,7 @@ namespace MiniBench
                 File.Delete(existingGeneratedFile);
             }
             fileDeletionTimer.Stop();
-            Console.WriteLine("\nTook {0} ({1,7:N2} ms) - to delete existing files from disk\n", fileDeletionTimer.Elapsed, fileDeletionTimer.Elapsed.TotalMilliseconds);
+            Console.WriteLine("\nTook {0} ({1,8:N2} ms) - to delete existing files from disk\n", fileDeletionTimer.Elapsed, fileDeletionTimer.Elapsed.TotalMilliseconds);
 
             var allSyntaxTrees = new List<SyntaxTree>(GenerateEmbeddedCode());
             var analyser = new Analyser();
@@ -57,7 +58,7 @@ namespace MiniBench
                 var analysisTimer = Stopwatch.StartNew();
                 var benchmarkInfo = analyser.AnalyseBenchmark(benchmarkTree, filePrefix);
                 analysisTimer.Stop();
-                Console.WriteLine("Took {0} ({1,7:N2} ms) - to analyse the benchmark code", analysisTimer.Elapsed, analysisTimer.Elapsed.TotalMilliseconds);
+                Console.WriteLine("Took {0} ({1,8:N2} ms) - to analyse the benchmark code", analysisTimer.Elapsed, analysisTimer.Elapsed.TotalMilliseconds);
 
                 allSyntaxTrees.Add(benchmarkTree);
 
@@ -71,11 +72,9 @@ namespace MiniBench
             CompileAndEmitCode(allSyntaxTrees);
         }
 
-        private IEnumerable<SyntaxTree> GenerateRunners(IEnumerable<BenchmarkInfo> benchmarkInfo, string outputDirectory)
+        private IList<SyntaxTree> GenerateRunners(IList<BenchmarkInfo> benchmarkInfo, string outputDirectory)
         {
             var generatedRunners = new List<SyntaxTree>(benchmarkInfo.Count());
-           
-
             foreach (var info in benchmarkInfo)
             {
                 var codeGenTimer = Stopwatch.StartNew();
@@ -85,12 +84,12 @@ namespace MiniBench
                 var formattedCode = FormatCode(generatedRunnerTree);
                 generatedRunners.Add(formattedCode);
                 codeGenTimer.Stop();
-                Console.WriteLine("Took {0} ({1,7:N2} ms) - to generate CSharp Syntax Tree", codeGenTimer.Elapsed, codeGenTimer.Elapsed.TotalMilliseconds);
+                Console.WriteLine("Took {0} ({1,8:N2} ms) - to generate CSharp Syntax Tree", codeGenTimer.Elapsed, codeGenTimer.Elapsed.TotalMilliseconds);
 
                 var fileWriteTimer = Stopwatch.StartNew();
                 File.WriteAllText(outputFileName, formattedCode.GetRoot().ToFullString(), encoding: defaultEncoding);
                 fileWriteTimer.Stop();
-                Console.WriteLine("Took {0} ({1,7:N2} ms) - to write file to disk", fileWriteTimer.Elapsed, fileWriteTimer.Elapsed.TotalMilliseconds);
+                Console.WriteLine("Took {0} ({1,8:N2} ms) - to write file to disk", fileWriteTimer.Elapsed, fileWriteTimer.Elapsed.TotalMilliseconds);
                 Console.WriteLine("Generated file: {0}\n", info.FileName);
             }
             return generatedRunners;
@@ -104,12 +103,12 @@ namespace MiniBench
             var generatedLauncherTree = CSharpSyntaxTree.ParseText(generatedLauncher, options: parseOptions, path: outputFileName, encoding: defaultEncoding);
             var formattedCode = FormatCode(generatedLauncherTree);
             codeGenTimer.Stop();
-            Console.WriteLine("Took {0} ({1,7:N2} ms) - to generate CSharp Syntax Tree", codeGenTimer.Elapsed, codeGenTimer.Elapsed.TotalMilliseconds);
+            Console.WriteLine("Took {0} ({1,8:N2} ms) - to generate CSharp Syntax Tree", codeGenTimer.Elapsed, codeGenTimer.Elapsed.TotalMilliseconds);
 
             var fileWriteTimer = Stopwatch.StartNew();
             File.WriteAllText(outputFileName, formattedCode.GetRoot().ToFullString(), encoding: defaultEncoding);
             fileWriteTimer.Stop();
-            Console.WriteLine("Took {0} ({1,7:N2} ms) - to write file to disk", fileWriteTimer.Elapsed, fileWriteTimer.Elapsed.TotalMilliseconds);
+            Console.WriteLine("Took {0} ({1,8:N2} ms) - to write file to disk", fileWriteTimer.Elapsed, fileWriteTimer.Elapsed.TotalMilliseconds);
             Console.WriteLine("Generated file: " + launcherFileName);
 
             return formattedCode;
@@ -159,31 +158,36 @@ namespace MiniBench
                                             optimizationLevel: OptimizationLevel.Release,
                                             allowUnsafe: projectSettings.AllowUnsafe);
 
-            // One call here will be sloooowww (probably Create() or Emit()), because it causes a load/JIT of certain parts of Roslyn
-            // see https://roslyn.codeplex.com/discussions/573503 for a full explanation (JITting of Roslyn dll's is the main cause)
-
             var compilationTimer = Stopwatch.StartNew();
             var compilation = CSharpCompilation.Create(projectSettings.OutputFileName, allSyntaxTrees, GetRequiredReferences(), compilationOptions);
             compilationTimer.Stop();
-            Console.WriteLine("\nTook {0} ({1,7:N2} ms) - to create the CSharpCompilation", compilationTimer.Elapsed, compilationTimer.Elapsed.TotalMilliseconds);
+            Console.WriteLine("\nTook {0} ({1,8:N2} ms) - to create the CSharpCompilation", compilationTimer.Elapsed, compilationTimer.Elapsed.TotalMilliseconds);
             Console.WriteLine("\nCurrent directory: " + Environment.CurrentDirectory);
 
-            // TODO fix this IOException (happens if the file is still being used whilst we are trying to "re-write" it)
-            //  Unhandled Exception: System.IO.IOException: The process cannot access the file '....MiniBench.Demo.dll' because it is being used by another process.
+            var codeEmitInMemoryTimer = Stopwatch.StartNew();
+            MemoryStream peStream = new MemoryStream(), pdbStream = new MemoryStream(), xmlDocStream = new MemoryStream();
+            var emitToDiskResult = compilation.Emit(peStream, pdbStream, xmlDocStream);
+            codeEmitInMemoryTimer.Stop();
+            Console.WriteLine("Took {0} ({1,8:N2} ms) - to emit generated code IN-MEMORY", codeEmitInMemoryTimer.Elapsed, codeEmitInMemoryTimer.Elapsed.TotalMilliseconds);
+            Console.WriteLine("Emit IN-MEMORY Success: {0}", emitToDiskResult.Success);
 
-            // TODO we should probably emit to a .temp file, than only if it's successful copy that over the top of the existing file (and delete the .temp file)
-            // that way, if something goes wrong the original binaries are left in-tact and we never emit invalid files
-
-            var codeEmitToDiskTimer = Stopwatch.StartNew();
-            var emitToDiskResult = compilation.Emit(outputPath: projectSettings.OutputFileName + projectSettings.OutputFileExtension,
-                                                    pdbPath: projectSettings.OutputFileName + ".pdb",
-                                                    xmlDocPath: projectSettings.OutputFileName + ".xml");
-            codeEmitToDiskTimer.Stop();
-            Console.WriteLine("Took {0} ({1,7:N2} ms) - to emit generated code to DISK", codeEmitToDiskTimer.Elapsed, codeEmitToDiskTimer.Elapsed.TotalMilliseconds);
-            Console.WriteLine("Emit to DISK Success: {0}", emitToDiskResult.Success);
             if (emitToDiskResult.Diagnostics.Length > 0)
             {
-                Console.WriteLine("\nCompilation Warnings:\n\t{0}\n", string.Join("\n\t", emitToDiskResult.Diagnostics));
+                Console.WriteLine("\nCompilation Diagnostics:\n\t{0}\n", string.Join("\n\t", emitToDiskResult.Diagnostics));
+            }
+
+            // Only emit to disk if everything was okay, otherwise leave the existing files along
+            if (emitToDiskResult.Success && 
+                emitToDiskResult.Diagnostics.Any(d => d.Severity == DiagnosticSeverity.Error) == false)
+            {
+                // TODO fix this IOException (happens if the file is still being used whilst we are trying to "re-write" it)
+                //  Unhandled Exception: System.IO.IOException: The process cannot access the file '....MiniBench.Demo.dll' because it is being used by another process.
+                var writeToDiskTimer = Stopwatch.StartNew();
+                File.WriteAllBytes(projectSettings.OutputFileName + projectSettings.OutputFileExtension, peStream.GetBuffer());
+                File.WriteAllBytes(projectSettings.OutputFileName + ".pdb", pdbStream.GetBuffer());
+                File.WriteAllBytes(projectSettings.OutputFileName + ".xml", xmlDocStream.GetBuffer());
+                writeToDiskTimer.Stop();
+                Console.WriteLine("Took {0} ({1,8:N2} ms) - to write generated code to disk", writeToDiskTimer.Elapsed, writeToDiskTimer.Elapsed.TotalMilliseconds);
             }
         }
 

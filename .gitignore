@@ -218,3 +218,7 @@ pip-log.txt
 
 # Don't check-in NuGet Packages (they should be re-built after each build)
 *.nupkg
+
+#Ants Profiler Files
+*.app9
+*.app9results
