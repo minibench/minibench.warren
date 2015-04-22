@@ -17,7 +17,7 @@ namespace MiniBench
         private readonly Tuple<String, ParamsAttribute, ParamsWithStepsAttribute> emptyParamResult =
            Tuple.Create<String, ParamsAttribute, ParamsWithStepsAttribute>(null, null, null);
 
-        internal Tuple<String, ParamsAttribute, ParamsWithStepsAttribute> GetParamInfo(ClassDeclarationSyntax @class)
+        internal Tuple<String, ParamsAttribute, ParamsWithStepsAttribute> TryGetParamInfoThrowIfInvalid(ClassDeclarationSyntax @class)
         {
             var fields = @class.ChildNodes().OfType<FieldDeclarationSyntax>()
                                 .Where(f => f.AttributeLists.SelectMany(al => al.Attributes)

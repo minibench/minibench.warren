@@ -19,5 +19,7 @@ namespace MiniBench
         public string ParamsFieldName { get; set; }
         public ParamsAttribute Params { get; set; }
         public ParamsWithStepsAttribute ParamsWithSteps { get; set; }
+
+        public string SetupMethod { get; set; }
     }
 }

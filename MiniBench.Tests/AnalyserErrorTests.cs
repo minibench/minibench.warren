@@ -210,5 +210,86 @@ namespace MiniBench.Tests
             Console.WriteLine("Error: " + exception.Message);
             Assert.Contains("Properties annotated with [Params] or [ParamsWithSteps] must be public and writable", exception.Message);
         }
+
+        [Fact]
+        public void SetupAttributeMustBeAppliedToMethodsWithNoParameters()
+        {
+            var code =
+@"using System;
+using MiniBench.Core;
+
+namespace MiniBench.Tests
+{
+    public class SimpleTest
+    {
+        [Setup]
+        public void SetupMethod(int notAllowed) {}
+
+        [Benchmark]
+        public void SimpleBenchmark() {}
+    }
+}";
+
+            Console.WriteLine(code);
+            var syntaxTree = CSharpSyntaxTree.ParseText(code, options: parseOptions, encoding: defaultEncoding);
+            var exception = Assert.Throws<InvalidOperationException>(() => new Analyser().AnalyseBenchmark(syntaxTree, "TestFile"));
+            Console.WriteLine("Error: " + exception.Message);
+            Assert.Contains("Methods annotated with [Setup] must have no parameters", exception.Message);
+        }
+
+        [Fact]
+        public void SetupAttributeMustBeAppliedToMethodsThatArePublicOrInternal()
+        {
+            var code =
+@"using System;
+using MiniBench.Core;
+
+namespace MiniBench.Tests
+{
+    public class SimpleTest
+    {
+        [Setup]
+        private void SetupMethod() {}
+
+        [Benchmark]
+        public void SimpleBenchmark() {}
+    }
+}";
+
+            Console.WriteLine(code);
+            var syntaxTree = CSharpSyntaxTree.ParseText(code, options: parseOptions, encoding: defaultEncoding);
+            var exception = Assert.Throws<InvalidOperationException>(() => new Analyser().AnalyseBenchmark(syntaxTree, "TestFile"));
+            Console.WriteLine("Error: " + exception.Message);
+            Assert.Contains("Methods annotated with [Setup] must be public or internal", exception.Message);
+        }
+
+        [Fact]
+        public void SetupAttributeCanOnlyBeAppliedToOneMethodInAClass()
+        {
+            var code =
+@"using System;
+using MiniBench.Core;
+
+namespace MiniBench.Tests
+{
+    public class SimpleTest
+    {
+        [Setup]
+        public void SetupMethodOne() {}
+
+        [Setup]
+        public void SetupMethodTwo() {}
+
+        [Benchmark]
+        public void SimpleBenchmark() {}
+    }
+}";
+
+            Console.WriteLine(code);
+            var syntaxTree = CSharpSyntaxTree.ParseText(code, options: parseOptions, encoding: defaultEncoding);
+            var exception = Assert.Throws<InvalidOperationException>(() => new Analyser().AnalyseBenchmark(syntaxTree, "TestFile"));
+            Console.WriteLine("Error: " + exception.Message);
+            Assert.Contains("Only one method can be annotated with [Setup]", exception.Message);
+        }
     }
 }

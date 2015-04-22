@@ -41,6 +41,7 @@
     <Compile Include="BenchmarkResult.cs" />
     <Compile Include="Blackhole.cs" />
     <Compile Include="CategoryAttribute.cs" />
+    <Compile Include="SetupAttribute.cs" />
     <Compile Include="Infrastructure\CommandLineArgs.cs" />
     <Compile Include="IterationParams.cs" />
     <Compile Include="ParamsWithStepsAttribute.cs" />

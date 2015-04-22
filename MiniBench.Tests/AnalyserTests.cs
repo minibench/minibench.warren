@@ -67,6 +67,7 @@ namespace MiniBench.Tests
             Assert.Empty(benchmarkInfo.ParametersToInject);
             Assert.Null(benchmarkInfo.ParamsWithSteps);
             Assert.Null(benchmarkInfo.ParamsFieldName);
+            Assert.Null(benchmarkInfo.SetupMethod);
         }
 
         [Fact]
@@ -325,6 +326,36 @@ namespace MiniBench.Tests
             Assert.Equal(new ParamsWithStepsAttribute(1, 10, 1), benchmarkInfo.ParamsWithSteps);
             Assert.Null(benchmarkInfo.Params);
             Assert.Equal("SomeProperty", benchmarkInfo.ParamsFieldName);
+        }
+
+        [Fact]
+        public void CanAnalyseSetupAttribute()
+        {
+            var code =
+@"using System;
+using MiniBench.Core;
+
+namespace MiniBench.Tests
+{
+    public class SimpleTest
+    {
+        [Setup]
+        public void SetupMethod() {}
+
+        [Benchmark]
+        public void SimpleBenchmark() {}
+    }
+}";
+
+            Console.WriteLine(code);
+            var syntaxTree = CSharpSyntaxTree.ParseText(code, options: parseOptions, encoding: defaultEncoding);
+            var results = new Analyser().AnalyseBenchmark(syntaxTree, "TestFile").ToList();
+
+            Assert.Equal(1, results.Count());
+            var benchmarkInfo = results.FirstOrDefault();
+            Assert.NotNull(benchmarkInfo);
+
+            Assert.Equal("SetupMethod", benchmarkInfo.SetupMethod);
         }
     }
 }
