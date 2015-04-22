@@ -78,13 +78,13 @@ using MiniBench.Core;
 
 namespace MiniBench.Tests
 {
-    public class MultiTest
+    class MultiTest
     {
         [Benchmark]
         public void SimpleBenchmark1() {}
 
         [Benchmark]
-        public void SimpleBenchmark2() {}
+        internal void SimpleBenchmark2() {}
 
         [Benchmark]
         public void SimpleBenchmark3() {}

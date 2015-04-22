@@ -13,7 +13,7 @@ namespace MiniBench.Tests
         private readonly Encoding defaultEncoding = Encoding.UTF8;
 
         [Fact]
-        public void BenchmarkMethodsMustBePublic()
+        public void BenchmarkMethodsMustBePublicOrInternal()
         {
             var code =
 @"using System;
@@ -21,7 +21,7 @@ using MiniBench.Core;
 
 namespace MiniBench.Tests
 {
-    public class SimpleTest
+    class SimpleTest // no modifier implies internal
     {
         [Benchmark]
         private void SimpleBenchmark() {}
@@ -35,7 +35,7 @@ namespace MiniBench.Tests
         }
 
         [Fact]
-        public void ClassesContainingBenchmarkMethodsMustBePublic()
+        public void ClassesContainingBenchmarkMethodsMustBePublicOrInternal()
         {
             var code =
 @"using System;

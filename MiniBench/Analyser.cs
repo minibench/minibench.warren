@@ -49,12 +49,11 @@ namespace MiniBench
                                                            .Any(atr => atr.Name.ToString() == benchmarkAttribute))
                                               .ToList();
 
-                var classIsPublic = @class.Modifiers.Any(m => m.IsKind(SyntaxKind.PublicKeyword));
-                if (benchmarkMethods.Count > 0 && classIsPublic == false)
+                if (benchmarkMethods.Count > 0 && PublicOrInternal(@class.Modifiers) == false)
                 {
                     var msg =
                         String.Format(
-                            "Classes containing methods annotated with [{0}] must be public, Class: {1} is {2}",
+                            "Classes containing methods annotated with [{0}] must be public or internal, Class: {1} is {2}",
                             benchmarkAttribute, className, String.Join(", ", @class.Modifiers));
                         throw new InvalidOperationException(msg);
                     }
@@ -73,10 +72,9 @@ namespace MiniBench
                                                            methodName);
                     var fileName = string.Format(generatedClassName + ".cs");
 
-                    var isPublic = method.Modifiers.Any(m => m.IsKind(SyntaxKind.PublicKeyword));
-                    if (isPublic == false)
+                    if (PublicOrInternal(method.Modifiers) == false)
                     {
-                        var msg = String.Format("Methods annotated with [{0}] must be public, Method: {1} is {2}",
+                        var msg = String.Format("Methods annotated with [{0}] must be public or internal, Method: {1} is {2}",
                                                 benchmarkAttribute, methodName, String.Join(", ", method.Modifiers));
                         throw new InvalidOperationException(msg);
                     }
@@ -130,6 +128,17 @@ namespace MiniBench
 
             // If we don't know, return false?
             return false;
+        }
+
+        private bool PublicOrInternal(SyntaxTokenList modifiers)
+        {
+            // Need to have either an explicit "public" or "internal" modified 
+            // OR
+            // no modifie, as this implies internal (which is the default);
+            return modifiers.Any(
+                        m => m.IsKind(SyntaxKind.PublicKeyword) ||
+                        m.IsKind(SyntaxKind.InternalKeyword)) ||
+                   modifiers.Count == 0;
         }
 
         private void PrintMethodDebuggingInfo(IEnumerable<MethodDeclarationSyntax> methods)
