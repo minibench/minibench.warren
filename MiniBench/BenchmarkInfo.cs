@@ -16,7 +16,8 @@ namespace MiniBench
 
         public IEnumerable<string> ParametersToInject { get; set; }
 
-        public ParamsWithStepsAttribute ParamsWithSteps { get; set; }
         public string ParamsFieldName { get; set; }
+        public ParamsAttribute Params { get; set; }
+        public ParamsWithStepsAttribute ParamsWithSteps { get; set; }
     }
 }

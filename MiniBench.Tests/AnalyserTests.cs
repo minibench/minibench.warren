@@ -1,8 +1,9 @@
-﻿using System.Linq;
-using System.Text;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using MiniBench.Core;
+using System;
+using System.Linq;
+using System.Text;
 using Xunit;
 
 namespace MiniBench.Tests
@@ -14,7 +15,7 @@ namespace MiniBench.Tests
         private readonly Encoding defaultEncoding = Encoding.UTF8;
 
         [Fact]
-        public void AnalyseBenchmark_CanAnalyseEmptyClass()
+        public void CanAnalyseEmptyClass()
         {
             var code =
 @"using System;
@@ -26,6 +27,7 @@ namespace MiniBench.Tests
     }
 }";
 
+            Console.WriteLine(code);
             var syntaxTree = CSharpSyntaxTree.ParseText(code, options: parseOptions, encoding: defaultEncoding);
             var results = new Analyser().AnalyseBenchmark(syntaxTree, "");
 
@@ -33,7 +35,7 @@ namespace MiniBench.Tests
         }
 
         [Fact]
-        public void AnalyseBenchmark_CanAnalyseSimpleBenchmark()
+        public void CanAnalyseSimpleBenchmark()
         {
             var code =
 @"using System;
@@ -41,13 +43,14 @@ using MiniBench.Core;
 
 namespace MiniBench.Tests
 {
-    class SimpleTest
+    public class SimpleTest
     {
         [Benchmark]
         public void SimpleBenchmark() {}
     }
 }";
 
+            Console.WriteLine(code);
             var syntaxTree = CSharpSyntaxTree.ParseText(code, options: parseOptions, encoding: defaultEncoding);
             var results = new Analyser().AnalyseBenchmark(syntaxTree, "TestFile").ToList();
 
@@ -67,7 +70,7 @@ namespace MiniBench.Tests
         }
 
         [Fact]
-        public void AnalyseBenchmark_CanAnalyseMultipleBenchmarksInOneClass()
+        public void CanAnalyseMultipleBenchmarksInOneClass()
         {
             var code =
 @"using System;
@@ -75,7 +78,7 @@ using MiniBench.Core;
 
 namespace MiniBench.Tests
 {
-    class MultiTest
+    public class MultiTest
     {
         [Benchmark]
         public void SimpleBenchmark1() {}
@@ -90,6 +93,7 @@ namespace MiniBench.Tests
     }
 }";
 
+            Console.WriteLine(code);
             var syntaxTree = CSharpSyntaxTree.ParseText(code, options: parseOptions, encoding: defaultEncoding);
             var results = new Analyser().AnalyseBenchmark(syntaxTree, "TestFile").ToList();
 
@@ -105,7 +109,7 @@ namespace MiniBench.Tests
         }
 
         [Fact]
-        public void AnalyseBenchmark_CanAnalyseWhenBlackholeIsNeededPredefinedType()
+        public void CanAnalyseWhenBlackholeIsNeededPredefinedType()
         {
             var code =
 @"using System;
@@ -113,7 +117,7 @@ using MiniBench.Core;
 
 namespace MiniBench.Tests
 {
-    class BlackholeTest
+    public class BlackholeTest
     {
         [Benchmark]
         public double SimpleBenchmark()
@@ -123,6 +127,7 @@ namespace MiniBench.Tests
     }
 }";
 
+            Console.WriteLine(code);
             var syntaxTree = CSharpSyntaxTree.ParseText(code, options: parseOptions, encoding: defaultEncoding);
             var results = new Analyser().AnalyseBenchmark(syntaxTree, "TestFile").ToList();
 
@@ -134,7 +139,7 @@ namespace MiniBench.Tests
         }
 
         [Fact]
-        public void AnalyseBenchmark_CanAnalyseWhenBlackholeIsNeededIdentifier()
+        public void CanAnalyseWhenBlackholeIsNeededIdentifier()
         {
             var code =
 @"using System;
@@ -142,7 +147,7 @@ using MiniBench.Core;
 
 namespace MiniBench.Tests
 {
-    class BlackholeTest
+    public class BlackholeTest
     {
         [Benchmark]
         public DateTime SimpleBenchmark()
@@ -152,6 +157,7 @@ namespace MiniBench.Tests
     }
 }";
 
+            Console.WriteLine(code);
             var syntaxTree = CSharpSyntaxTree.ParseText(code, options: parseOptions, encoding: defaultEncoding);
             var results = new Analyser().AnalyseBenchmark(syntaxTree, "TestFile").ToList();
 
@@ -163,7 +169,7 @@ namespace MiniBench.Tests
         }
 
         [Fact]
-        public void AnalyseBenchmark_CanAnalyseInjectedParams()
+        public void CanAnalyseInjectedParams()
         {
             var code =
 @"using System;
@@ -171,7 +177,7 @@ using MiniBench.Core;
 
 namespace MiniBench.Tests
 {
-    class BlackholeTest
+    public class BlackholeTest
     {
         [Benchmark]
         public double SimpleBenchmark(IterationParams iteration)
@@ -181,6 +187,7 @@ namespace MiniBench.Tests
     }
 }";
 
+            Console.WriteLine(code);
             var syntaxTree = CSharpSyntaxTree.ParseText(code, options: parseOptions, encoding: defaultEncoding);
             var results = new Analyser().AnalyseBenchmark(syntaxTree, "TestFile").ToList();
 
@@ -193,7 +200,7 @@ namespace MiniBench.Tests
         }
 
         [Fact]
-        public void AnalyseBenchmark_CanAnalyseParamsWithStepsForField()
+        public void CanAnalyseParamsForField()
         {
             var code =
 @"using System;
@@ -201,7 +208,39 @@ using MiniBench.Core;
 
 namespace MiniBench.Tests
 {
-    class BlackholeTest
+    public class BlackholeTest
+    {
+        [Params(1, 2, 3, 4, 5, 10)]
+        public int SomeField;
+
+        [Benchmark]
+        public void SimpleBenchmark() { }
+    }
+}";
+
+            Console.WriteLine(code);
+            var syntaxTree = CSharpSyntaxTree.ParseText(code, options: parseOptions, encoding: defaultEncoding);
+            var results = new Analyser().AnalyseBenchmark(syntaxTree, "TestFile").ToList();
+
+            Assert.Equal(1, results.Count());
+            var benchmarkInfo = results.FirstOrDefault();
+            Assert.NotNull(benchmarkInfo);
+
+            Assert.Equal(new ParamsAttribute(1, 2, 3, 4, 5, 10), benchmarkInfo.Params);
+            Assert.Null(benchmarkInfo.ParamsWithSteps);
+            Assert.Equal("SomeField", benchmarkInfo.ParamsFieldName);
+        }
+
+        [Fact]
+        public void CanAnalyseParamsWithStepsForField()
+        {
+            var code =
+@"using System;
+using MiniBench.Core;
+
+namespace MiniBench.Tests
+{
+    public class BlackholeTest
     {
         [ParamsWithSteps(start:1, end:10, step:1)]
         public int SomeField;
@@ -211,6 +250,7 @@ namespace MiniBench.Tests
     }
 }";
 
+            Console.WriteLine(code);
             var syntaxTree = CSharpSyntaxTree.ParseText(code, options: parseOptions, encoding: defaultEncoding);
             var results = new Analyser().AnalyseBenchmark(syntaxTree, "TestFile").ToList();
 
@@ -219,11 +259,12 @@ namespace MiniBench.Tests
             Assert.NotNull(benchmarkInfo);
 
             Assert.Equal(new ParamsWithStepsAttribute(1, 10, 1), benchmarkInfo.ParamsWithSteps);
+            Assert.Null(benchmarkInfo.Params);
             Assert.Equal("SomeField", benchmarkInfo.ParamsFieldName);
         }
 
         [Fact]
-        public void AnalyseBenchmark_CanAnalyseParamsWithStepsForProperty()
+        public void CanAnalyseParamsForProperty()
         {
             var code =
 @"using System;
@@ -231,7 +272,39 @@ using MiniBench.Core;
 
 namespace MiniBench.Tests
 {
-    class BlackholeTest
+    public class BlackholeTest
+    {
+        [Params(1, 2, 3, 4, 5, 10)]
+        public int SomeProperty { get; set; };
+
+        [Benchmark]
+        public void SimpleBenchmark() { }
+    }
+}";
+
+            Console.WriteLine(code);
+            var syntaxTree = CSharpSyntaxTree.ParseText(code, options: parseOptions, encoding: defaultEncoding);
+            var results = new Analyser().AnalyseBenchmark(syntaxTree, "TestFile").ToList();
+
+            Assert.Equal(1, results.Count());
+            var benchmarkInfo = results.FirstOrDefault();
+            Assert.NotNull(benchmarkInfo);
+
+            Assert.Equal(new ParamsAttribute(1, 2, 3, 4, 5, 10), benchmarkInfo.Params);
+            Assert.Null(benchmarkInfo.ParamsWithSteps);
+            Assert.Equal("SomeProperty", benchmarkInfo.ParamsFieldName);
+        }
+
+        [Fact]
+        public void CanAnalyseParamsWithStepsForProperty()
+        {
+            var code =
+@"using System;
+using MiniBench.Core;
+
+namespace MiniBench.Tests
+{
+    public class BlackholeTest
     {
         [ParamsWithSteps(start:1, end:10, step:1)]
         public int SomeProperty { get; set; };
@@ -241,6 +314,7 @@ namespace MiniBench.Tests
     }
 }";
 
+            Console.WriteLine(code);
             var syntaxTree = CSharpSyntaxTree.ParseText(code, options: parseOptions, encoding: defaultEncoding);
             var results = new Analyser().AnalyseBenchmark(syntaxTree, "TestFile").ToList();
 
@@ -249,6 +323,7 @@ namespace MiniBench.Tests
             Assert.NotNull(benchmarkInfo);
 
             Assert.Equal(new ParamsWithStepsAttribute(1, 10, 1), benchmarkInfo.ParamsWithSteps);
+            Assert.Null(benchmarkInfo.Params);
             Assert.Equal("SomeProperty", benchmarkInfo.ParamsFieldName);
         }
     }
