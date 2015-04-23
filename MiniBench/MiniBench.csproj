@@ -161,6 +161,9 @@
     <EmbeddedResource Include="..\MiniBench.Core\Runner.cs">
       <Link>Core\Runner.cs</Link>
     </EmbeddedResource>
+    <EmbeddedResource Include="..\MiniBench.Core\SetupAttribute.cs">
+      <Link>Core\SetupAttribute.cs</Link>
+    </EmbeddedResource>
     <Compile Include="Analyser.cs" />
     <Compile Include="BenchmarkInfo.cs" />
     <Compile Include="BenchmarkTemplate.cs" />

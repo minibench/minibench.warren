@@ -14,6 +14,8 @@ namespace MiniBench
         private static string paramsStartCodeReplaceText = "##PARAMS-START-CODE##";
         private static string paramsEndCodeReplaceText = "##PARAMS-END-CODE##";
 
+        private static string setupMethodCallReplaceText = "##SETUP-METHOD-CALL##";
+
         private static string benchmarkHarnessTemplate =
 @"using System;
 using System.Diagnostics;
@@ -68,6 +70,7 @@ namespace MiniBench.Benchmarks
                 Stopwatch stopwatch = new Stopwatch();
                 ##PARAMS-START-CODE##
                 // Make sure the method is JIT-compiled.
+                ##SETUP-METHOD-CALL##
                 ##WARMUP-METHOD-CALL##;
 
                 GC.Collect();
@@ -80,6 +83,7 @@ namespace MiniBench.Benchmarks
                     long ticks = (long)(Stopwatch.Frequency * options.WarmupTime.TotalSeconds);
                     stopwatch.Reset();
                     stopwatch.Start();
+                    ##SETUP-METHOD-CALL##
                     while (stopwatch.ElapsedTicks < ticks)
                     {
                         ##WARMUP-METHOD-CALL##;
@@ -108,6 +112,7 @@ namespace MiniBench.Benchmarks
                 {
                     iterations.Batch = batch;
                     profiler.BeforeIteration();
+                    ##SETUP-METHOD-CALL##
                     stopwatch.Reset();
                     stopwatch.Start();
                     for (iterations.Count = 0; iterations.Count < iterations.TotalCount; iterations.Count++)
@@ -174,15 +179,22 @@ namespace MiniBench.Benchmarks
                 paramsEndCode = "}\n";
             }
 
+            var setupMethodCode = "";
+            if (info.SetupMethod != null)
+            {
+                setupMethodCode = "benchmarkClass." + info.SetupMethod + "();";
+            }
+
             var generatedBenchmark = benchmarkHarnessTemplate
-                                .Replace(namespaceReplaceText, info.NamespaceName)
-                                .Replace(classReplaceText, info.ClassName)
-                                .Replace(methodReplaceText, info.MethodName)
-                                .Replace(warmupMethodCallReplaceText, warmupMethodCall)
-                                .Replace(benchmarkMethodCallReplaceText, benchmarkMethodCall)
-                                .Replace(generatedClassReplaceText, info.GeneratedClassName)
-                                .Replace(paramsStartCodeReplaceText, paramsStartCode)
-                                .Replace(paramsEndCodeReplaceText, paramsEndCode);
+                .Replace(namespaceReplaceText, info.NamespaceName)
+                .Replace(classReplaceText, info.ClassName)
+                .Replace(methodReplaceText, info.MethodName)
+                .Replace(warmupMethodCallReplaceText, warmupMethodCall)
+                .Replace(benchmarkMethodCallReplaceText, benchmarkMethodCall)
+                .Replace(generatedClassReplaceText, info.GeneratedClassName)
+                .Replace(paramsStartCodeReplaceText, paramsStartCode)
+                .Replace(paramsEndCodeReplaceText, paramsEndCode)
+                .Replace(setupMethodCallReplaceText, setupMethodCode);
 
             return generatedBenchmark;
         }
