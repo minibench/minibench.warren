@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Globalization;
+using System.Text;
 
 namespace MiniBench
 {
@@ -171,9 +172,9 @@ namespace MiniBench.Benchmarks
 ";
 
                 paramsStartCode = paramsStartCodeTemplate
-                    .Replace("##START##", info.ParamsWithSteps.Start.ToString())
-                    .Replace("##END##", info.ParamsWithSteps.End.ToString())
-                    .Replace("##STEP##", info.ParamsWithSteps.Step.ToString())
+                    .Replace("##START##", info.ParamsWithSteps.Start.ToString(CultureInfo.InvariantCulture))
+                    .Replace("##END##", info.ParamsWithSteps.End.ToString(CultureInfo.InvariantCulture))
+                    .Replace("##STEP##", info.ParamsWithSteps.Step.ToString(CultureInfo.InvariantCulture))
                     .Replace("##PARAM-NAME##", info.ParamsFieldName);
 
                 paramsEndCode = "}\n";

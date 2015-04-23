@@ -1,14 +1,13 @@
-﻿using System;
+﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Formatting;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Emit;
-using Microsoft.CodeAnalysis.Formatting;
 
 namespace MiniBench
 {
@@ -51,9 +50,12 @@ namespace MiniBench
             foreach (var file in projectSettings.SourceFiles.Where(f => f.StartsWith("Properties\\") == false))
             {
                 Console.WriteLine("Processing file: " + file);
+                var timer = Stopwatch.StartNew();
                 var filePath = Path.Combine(projectSettings.RootFolder, file);
                 var code = File.ReadAllText(filePath);
                 var benchmarkTree = CSharpSyntaxTree.ParseText(code, options: parseOptions, path: filePath, encoding: defaultEncoding);
+                timer.Stop();
+                Console.WriteLine("Took {0} ({1,8:N2} ms) - to read existing benchmark and generate CSharp Syntax Tree", timer.Elapsed, timer.Elapsed.TotalMilliseconds);
 
                 var analysisTimer = Stopwatch.StartNew();
                 var benchmarkInfo = analyser.AnalyseBenchmark(benchmarkTree, filePrefix);
@@ -80,11 +82,10 @@ namespace MiniBench
                 var codeGenTimer = Stopwatch.StartNew();
                 var outputFileName = Path.Combine(outputDirectory, info.FileName);
                 var generatedBenchmark = BenchmarkTemplate.ProcessCodeTemplates(info);
-                var generatedRunnerTree = CSharpSyntaxTree.ParseText(generatedBenchmark, options: parseOptions, path: outputFileName, encoding: defaultEncoding);
-                var formattedCode = FormatCode(generatedRunnerTree);
+                var formattedCode = ParseAndFormatCode(generatedBenchmark, parseOptions, outputFileName, defaultEncoding);
                 generatedRunners.Add(formattedCode);
                 codeGenTimer.Stop();
-                Console.WriteLine("Took {0} ({1,8:N2} ms) - to generate CSharp Syntax Tree", codeGenTimer.Elapsed, codeGenTimer.Elapsed.TotalMilliseconds);
+                Console.WriteLine("Took {0} ({1,8:N2} ms) - to generate and format CSharp Syntax Tree", codeGenTimer.Elapsed, codeGenTimer.Elapsed.TotalMilliseconds);
 
                 var fileWriteTimer = Stopwatch.StartNew();
                 File.WriteAllText(outputFileName, formattedCode.GetRoot().ToFullString(), encoding: defaultEncoding);
@@ -100,10 +101,9 @@ namespace MiniBench
             var generatedLauncher = LauncherTemplate.ProcessLauncherTemplate();
             var outputFileName = Path.Combine(outputDirectory, launcherFileName);
             var codeGenTimer = Stopwatch.StartNew();
-            var generatedLauncherTree = CSharpSyntaxTree.ParseText(generatedLauncher, options: parseOptions, path: outputFileName, encoding: defaultEncoding);
-            var formattedCode = FormatCode(generatedLauncherTree);
+            var formattedCode = ParseAndFormatCode(generatedLauncher, parseOptions, outputFileName, defaultEncoding);
             codeGenTimer.Stop();
-            Console.WriteLine("Took {0} ({1,8:N2} ms) - to generate CSharp Syntax Tree", codeGenTimer.Elapsed, codeGenTimer.Elapsed.TotalMilliseconds);
+            Console.WriteLine("Took {0} ({1,8:N2} ms) - to generate and format CSharp Syntax Tree", codeGenTimer.Elapsed, codeGenTimer.Elapsed.TotalMilliseconds);
 
             var fileWriteTimer = Stopwatch.StartNew();
             File.WriteAllText(outputFileName, formattedCode.GetRoot().ToFullString(), encoding: defaultEncoding);
@@ -115,22 +115,26 @@ namespace MiniBench
         }
 
         private readonly Workspace dummyWorkspace = new AdhocWorkspace();
-        private SyntaxTree FormatCode(SyntaxTree generatedCodeTree)
+
+        private SyntaxTree ParseAndFormatCode(string code, CSharpParseOptions options, string path, Encoding encoding)
         {
-            // Use Roslyn to format out generated code, saves us having to do it manually!!
+            var generatedCodeTree = CSharpSyntaxTree.ParseText(code); //, options: parseOptions, path: outputFileName, encoding: defaultEncoding);
+            // Use Roslyn to format our generated code, this saves us having to do it manually!!
             var formattedRunnerTree = Formatter.Format(generatedCodeTree.GetRoot(), dummyWorkspace);
-            // TODO work out if there is a better way of applying our options (parseOptions)
-            return formattedRunnerTree.SyntaxTree.WithRootAndOptions(formattedRunnerTree, parseOptions);
+            return SyntaxFactory.SyntaxTree(formattedRunnerTree, options: options, path: path, encoding: encoding);
         }
+
+        private readonly string[] allowedNamespacePrefixes = new[]
+            {
+                "MiniBench.Core.",
+                "MiniBench.Profiling.",
+                "MiniBench.Infrastructure."
+            };
 
         private IEnumerable<SyntaxTree> GenerateEmbeddedCode()
         {
             var embeddedCodeTrees = new List<SyntaxTree>();
             var assembly = Assembly.GetExecutingAssembly();
-            var allowedNamespacePrefixes = new[]
-                {
-                    "MiniBench.Core.", "MiniBench.Profiling.", "MiniBench.Infrastructure."
-                };
             foreach (var codeFile in assembly.GetManifestResourceNames())
             {
                 if (allowedNamespacePrefixes.Any(ns => codeFile.StartsWith(ns)) == false)
@@ -166,19 +170,19 @@ namespace MiniBench
 
             var codeEmitInMemoryTimer = Stopwatch.StartNew();
             MemoryStream peStream = new MemoryStream(), pdbStream = new MemoryStream(), xmlDocStream = new MemoryStream();
-            var emitToDiskResult = compilation.Emit(peStream, pdbStream, xmlDocStream);
+            var emitResult = compilation.Emit(peStream, pdbStream, xmlDocStream);
             codeEmitInMemoryTimer.Stop();
             Console.WriteLine("Took {0} ({1,8:N2} ms) - to emit generated code IN-MEMORY", codeEmitInMemoryTimer.Elapsed, codeEmitInMemoryTimer.Elapsed.TotalMilliseconds);
-            Console.WriteLine("Emit IN-MEMORY Success: {0}", emitToDiskResult.Success);
+            Console.WriteLine("Emit IN-MEMORY Success: {0}", emitResult.Success);
 
-            if (emitToDiskResult.Diagnostics.Length > 0)
+            if (emitResult.Diagnostics.Length > 0)
             {
-                Console.WriteLine("\nCompilation Diagnostics:\n\t{0}\n", string.Join("\n\t", emitToDiskResult.Diagnostics));
+                Console.WriteLine("\nCompilation Diagnostics:\n\t{0}\n", string.Join("\n\t", emitResult.Diagnostics));
             }
 
             // Only emit to disk if everything was okay, otherwise leave the existing files along
-            if (emitToDiskResult.Success && 
-                emitToDiskResult.Diagnostics.Any(d => d.Severity == DiagnosticSeverity.Error) == false)
+            if (emitResult.Success && 
+                emitResult.Diagnostics.Any(d => d.Severity == DiagnosticSeverity.Error) == false)
             {
                 // TODO fix this IOException (happens if the file is still being used whilst we are trying to "re-write" it)
                 //  Unhandled Exception: System.IO.IOException: The process cannot access the file '....MiniBench.Demo.dll' because it is being used by another process.
@@ -192,6 +196,37 @@ namespace MiniBench
         }
 
         private IEnumerable<MetadataReference> GetRequiredReferences()
+        {
+            var references = GetBCLReferences();
+
+            // Now add the references we need from the .csproj file
+            foreach (var reference in projectSettings.References)
+            {
+                // TODO we need to handle references that don't have a "HintPath", i.e. things like:
+                // <Reference Include="System" />
+                // <Reference Include="System.Data" />
+                // <Reference Include="System.Xml" />
+                // TODO At the moment we only deal with ones like this:
+                // <Reference Include="xunit">
+                //     <HintPath>..\packages\xunit.1.9.2\lib\net20\xunit.dll</HintPath>
+                // </Reference>
+
+                // TODO work out how to get rid of the following Warning (that appears in the VS Output Window)
+                // warning CS1701: Assuming assembly reference 'mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089' used by 'xunit' 
+                //                            matches identity 'mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089' of 'mscorlib', 
+                //                 you may need to supply runtime policy
+
+                var metadataReference = MetadataReference.CreateFromFile(
+                                            Path.GetFullPath(Path.Combine(projectSettings.RootFolder, reference.Item2)));
+                references.Add(metadataReference);
+            }
+
+            Console.WriteLine("\nAdding References:\n\t" + String.Join("\n\t", references.Select(r => r.Display)));
+
+            return references;
+        }
+
+        private List<MetadataReference> GetBCLReferences()
         {
             var standardReferences = new List<MetadataReference>(16);
             if (projectSettings.TargetFrameworkVersion == LanguageVersion.CSharp2 ||
@@ -221,36 +256,12 @@ namespace MiniBench
                 // Using typeof(..) means we get the best match, for instance from the GAC
 
                 // This pulls in mscorlib.dll 
-                standardReferences.Add(MetadataReference.CreateFromAssembly(typeof(String).Assembly));
+                standardReferences.Add(MetadataReference.CreateFromAssembly(typeof (String).Assembly));
                 // This pulls in System.dll
-                standardReferences.Add(MetadataReference.CreateFromAssembly(typeof(Stopwatch).Assembly));
+                standardReferences.Add(MetadataReference.CreateFromAssembly(typeof (Stopwatch).Assembly));
                 // This pulls in System.Core, i.e. the stuff you need for LINQ
-                standardReferences.Add(MetadataReference.CreateFromAssembly(typeof(System.Linq.Enumerable).Assembly));
+                standardReferences.Add(MetadataReference.CreateFromAssembly(typeof (System.Linq.Enumerable).Assembly));
             }
-
-            // Now add the references we need from the .csproj file
-            foreach (var reference in projectSettings.References)
-            {
-                // TODO we need to handle references that don't have a "HintPath", i.e. things like:
-                // <Reference Include="System" />
-                // <Reference Include="System.Data" />
-                // <Reference Include="System.Xml" />
-                // TODO At the moment we only deal with ones like this:
-                // <Reference Include="xunit">
-                //     <HintPath>..\packages\xunit.1.9.2\lib\net20\xunit.dll</HintPath>
-                // </Reference>
-
-                // TODO work out how to get rid of the following Warning (that appears in the VS Output Window)
-                // warning CS1701: Assuming assembly reference 'mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089' used by 'xunit' 
-                //                            matches identity 'mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089' of 'mscorlib', 
-                //                 you may need to supply runtime policy
-
-                var metadataReference = MetadataReference.CreateFromFile(Path.GetFullPath(Path.Combine(projectSettings.RootFolder, reference.Item2)));
-                standardReferences.Add(metadataReference);
-            }
-
-            Console.WriteLine("\nAdding References:\n\t" + String.Join("\n\t", standardReferences.Select(r => r.Display)));
-
             return standardReferences;
         }
     }
