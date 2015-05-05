@@ -60,8 +60,7 @@ namespace MiniBench.Benchmarks
                 Console.WriteLine(""Running benchmark: {0}.{1}"", @type, @method);
                 ##CLASS-NAME## benchmarkClass = GetBenchmarkClass();
 
-                IterationParams warmupIterations = new IterationParams();
-                warmupIterations.Count = 0;
+
 
                 IterationParams iterations = new IterationParams();
 
@@ -70,8 +69,12 @@ namespace MiniBench.Benchmarks
 
                 Stopwatch stopwatch = new Stopwatch();
                 ##PARAMS-START-CODE##
-                // Make sure the method is JIT-compiled.
+
+                IterationParams warmupIterations = new IterationParams();
+                warmupIterations.Count = 0;
+
                 ##SETUP-METHOD-CALL##
+                // Make sure the method is JIT-compiled.
                 ##WARMUP-METHOD-CALL##;
 
                 GC.Collect();
@@ -82,9 +85,10 @@ namespace MiniBench.Benchmarks
                 if (options.WarmupRuns > 0)
                 {
                     long ticks = (long)(Stopwatch.Frequency * options.WarmupTime.TotalSeconds);
+                    ##SETUP-METHOD-CALL##
+
                     stopwatch.Reset();
                     stopwatch.Start();
-                    ##SETUP-METHOD-CALL##
                     while (stopwatch.ElapsedTicks < ticks)
                     {
                         ##WARMUP-METHOD-CALL##;
@@ -103,17 +107,20 @@ namespace MiniBench.Benchmarks
                     iterations.TotalCount = 10000;
                 }
 
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
-
                 if (options.InvocationsPerRun != null)
                     iterations.TotalCount = (int)options.InvocationsPerRun;
 
                 for (int batch = 0; batch < options.Runs; batch++)
                 {
                     iterations.Batch = batch;
+                    //Console.WriteLine(""Batch: {0},  iterations.TotalCount: {1:N0}"", batch, iterations.TotalCount);
+
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
+
                     profiler.BeforeIteration();
                     ##SETUP-METHOD-CALL##
+
                     stopwatch.Reset();
                     stopwatch.Start();
                     for (iterations.Count = 0; iterations.Count < iterations.TotalCount; iterations.Count++)
@@ -121,6 +128,7 @@ namespace MiniBench.Benchmarks
                         ##BENCHMARK-METHOD-CALL##;
                     }
                     stopwatch.Stop();
+
                     profiler.AfterIteration();
 
                     Console.WriteLine(""Benchmark: {0,12:N0} iterations in {1,10:N3} ms, {2,6:N3} ns/op"", 
@@ -168,7 +176,7 @@ namespace MiniBench.Benchmarks
 @"for (int param = ##START##; param <= ##END##; param += ##STEP##)
 {
     benchmarkClass.##PARAM-NAME## = param;
-    Console.WriteLine(""Param = "" + benchmarkClass.##PARAM-NAME##);
+    Console.WriteLine(""\nParam = "" + benchmarkClass.##PARAM-NAME##);
 ";
 
                 paramsStartCode = paramsStartCodeTemplate
