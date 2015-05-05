@@ -1,6 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using MiniBench.Core;
+using MiniBench.Core.CodeAnalysis;
 using System;
 using System.Linq;
 using System.Text;
@@ -107,6 +108,64 @@ namespace MiniBench.Tests
             Assert.Equal(1, results.Count(r => r.MethodName == "SimpleBenchmark2"));
             Assert.Equal(1, results.Count(r => r.MethodName == "SimpleBenchmark3"));
             Assert.Equal(0, results.Count(r => r.MethodName == "SimpleNOTBenchmark"));
+        }
+
+        [Fact]
+        public void CanAnalyseMultipleBenchmarksInMultipleClasses()
+        {
+            var code =
+@"using System;
+using MiniBench.Core;
+
+namespace MiniBench.Tests
+{
+    class MultiTest1
+    {
+        [Benchmark]
+        public void SimpleBenchmark1() {}
+
+        [Benchmark]
+        internal void SimpleBenchmark2() {}
+
+        [Benchmark]
+        public void SimpleBenchmark3() {}
+
+        public void SimpleNOTBenchmark() {}
+    }
+
+    class MultiTest2
+    {
+        [Benchmark]
+        public void SimpleBenchmark1() {}
+    }
+
+    class MultiTest3
+    {
+        public void SimpleNOTBenchmark() {}
+    }
+}";
+
+            Console.WriteLine(code);
+            var syntaxTree = CSharpSyntaxTree.ParseText(code, options: parseOptions, encoding: defaultEncoding);
+            var results = new Analyser().AnalyseBenchmark(syntaxTree, "TestFile").ToList();
+
+            Assert.Equal(4, results.Count());
+            Assert.True(results.All(r => r.NamespaceName == "MiniBench.Tests"));
+
+            // class MultiTest1
+            Assert.Equal(3, results.Count(r => r.ClassName == "MultiTest1"));
+            Assert.Equal(1, results.Count(r => r.ClassName == "MultiTest1" && r.MethodName == "SimpleBenchmark1"));
+            Assert.Equal(1, results.Count(r => r.ClassName == "MultiTest1" && r.MethodName == "SimpleBenchmark2"));
+            Assert.Equal(1, results.Count(r => r.ClassName == "MultiTest1" && r.MethodName == "SimpleBenchmark3"));
+            Assert.Equal(0, results.Count(r => r.ClassName == "MultiTest1" && r.MethodName == "SimpleNOTBenchmark"));
+
+            // class MultiTest2
+            Assert.Equal(1, results.Count(r => r.ClassName == "MultiTest2"));
+            Assert.Equal(1, results.Count(r => r.ClassName == "MultiTest2" && r.MethodName == "SimpleBenchmark1"));
+
+            // class MultiTest3
+            Assert.Equal(0, results.Count(r => r.ClassName == "MultiTest3"));
+            Assert.Equal(0, results.Count(r => r.ClassName == "MultiTest3" && r.MethodName == "SimpleNOTBenchmark"));
         }
 
         [Fact]

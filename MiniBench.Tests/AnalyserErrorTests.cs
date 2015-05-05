@@ -1,5 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using MiniBench.Core.CodeAnalysis;
 using System;
 using System.Text;
 using Xunit;

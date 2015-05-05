@@ -1,13 +1,12 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using MiniBench.Core;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
-namespace MiniBench
+namespace MiniBench.Core.CodeAnalysis
 {
     internal class ParamsAttributeAnalyser
     {

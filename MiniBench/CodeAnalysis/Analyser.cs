@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace MiniBench
+namespace MiniBench.Core.CodeAnalysis
 {
     /// <summary>
     /// This class analyses a SyntaxTree (coming from a single .cs file) and returns a list of all the 

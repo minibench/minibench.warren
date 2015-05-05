@@ -1,6 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Formatting;
+using MiniBench.Core.CodeAnalysis;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -118,7 +119,7 @@ namespace MiniBench
 
         private SyntaxTree ParseAndFormatCode(string code, CSharpParseOptions options, string path, Encoding encoding)
         {
-            var generatedCodeTree = CSharpSyntaxTree.ParseText(code); //, options: parseOptions, path: outputFileName, encoding: defaultEncoding);
+            var generatedCodeTree = CSharpSyntaxTree.ParseText(code);
             // Use Roslyn to format our generated code, this saves us having to do it manually!!
             var formattedRunnerTree = Formatter.Format(generatedCodeTree.GetRoot(), dummyWorkspace);
             return SyntaxFactory.SyntaxTree(formattedRunnerTree, options: options, path: path, encoding: encoding);
@@ -180,7 +181,7 @@ namespace MiniBench
                 Console.WriteLine("\nCompilation Diagnostics:\n\t{0}\n", string.Join("\n\t", emitResult.Diagnostics));
             }
 
-            // Only emit to disk if everything was okay, otherwise leave the existing files along
+            // Only emit to disk if everything was okay, otherwise leave the existing files alone
             if (emitResult.Success && 
                 emitResult.Diagnostics.Any(d => d.Severity == DiagnosticSeverity.Error) == false)
             {
