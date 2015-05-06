@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System;
+using System.Globalization;
 using System.Text;
 
 namespace MiniBench
@@ -59,8 +60,6 @@ namespace MiniBench.Benchmarks
             {
                 Console.WriteLine(""Running benchmark: {0}.{1}"", @type, @method);
                 ##CLASS-NAME## benchmarkClass = GetBenchmarkClass();
-
-
 
                 IterationParams iterations = new IterationParams();
 
@@ -169,26 +168,15 @@ namespace MiniBench.Benchmarks
 
             // We know we produce code with wierd/no formatting, but later on we use Roslyn to fix it for us!!
             // See Formatter.Format() call in GenerateRunners() in CodeGenerator.cs
-            string paramsStartCode = "", paramsEndCode = "";
-            if (info.ParamsWithSteps != null && info.ParamsFieldName != null)
+            string paramsStartCode = String.Empty, paramsEndCode = String.Empty;
+            if (info.ParamsFieldName != null && (info.Params != null || info.ParamsWithSteps != null))
             {
-                var paramsStartCodeTemplate =
-@"for (int param = ##START##; param <= ##END##; param += ##STEP##)
-{
-    benchmarkClass.##PARAM-NAME## = param;
-    Console.WriteLine(""\nParam = "" + benchmarkClass.##PARAM-NAME##);
-";
-
-                paramsStartCode = paramsStartCodeTemplate
-                    .Replace("##START##", info.ParamsWithSteps.Start.ToString(CultureInfo.InvariantCulture))
-                    .Replace("##END##", info.ParamsWithSteps.End.ToString(CultureInfo.InvariantCulture))
-                    .Replace("##STEP##", info.ParamsWithSteps.Step.ToString(CultureInfo.InvariantCulture))
-                    .Replace("##PARAM-NAME##", info.ParamsFieldName);
-
+                paramsStartCode = GenerateParamsStartCode(info);
+                // We always generate a loop, so the end code is that same
                 paramsEndCode = "}\n";
             }
 
-            var setupMethodCode = "";
+            var setupMethodCode = String.Empty;
             if (info.SetupMethod != null)
             {
                 setupMethodCode = "benchmarkClass." + info.SetupMethod + "();";
@@ -206,6 +194,41 @@ namespace MiniBench.Benchmarks
                 .Replace(setupMethodCallReplaceText, setupMethodCode);
 
             return generatedBenchmark;
+        }
+
+        private static string GenerateParamsStartCode(BenchmarkInfo info)
+        {
+            if (info.Params != null)
+            {
+                var paramsStartCodeTemplate =
+                    @"int [] paramArgs = new [] { ##PARAM-ARGS## };
+for (int param = 0; param < paramArgs.Length; param++)
+{
+    benchmarkClass.##PARAM-NAME## = paramArgs[param];
+    Console.WriteLine(""\nParam = "" + benchmarkClass.##PARAM-NAME##);
+";
+                var paramsStartCode = paramsStartCodeTemplate
+                    .Replace("##PARAM-ARGS##", String.Join(", ", info.Params.Args))
+                    .Replace("##PARAM-NAME##", info.ParamsFieldName);
+                return paramsStartCode;
+            }
+            else if (info.ParamsWithSteps != null)
+            {
+                var paramsStartCodeTemplate =
+                    @"for (int param = ##START##; param <= ##END##; param += ##STEP##)
+{
+    benchmarkClass.##PARAM-NAME## = param;
+    Console.WriteLine(""\nParam = "" + benchmarkClass.##PARAM-NAME##);
+";
+                var paramsStartCode = paramsStartCodeTemplate
+                    .Replace("##START##", info.ParamsWithSteps.Start.ToString(CultureInfo.InvariantCulture))
+                    .Replace("##END##", info.ParamsWithSteps.End.ToString(CultureInfo.InvariantCulture))
+                    .Replace("##STEP##", info.ParamsWithSteps.Step.ToString(CultureInfo.InvariantCulture))
+                    .Replace("##PARAM-NAME##", info.ParamsFieldName);
+                return paramsStartCode;
+            }
+
+            return String.Empty;
         }
 
         private static string GetMethodCallWithParameters(BenchmarkInfo info, bool warmupMethod = false)

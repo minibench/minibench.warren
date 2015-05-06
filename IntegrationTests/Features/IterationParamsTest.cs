@@ -1,5 +1,5 @@
-﻿using System;
-using MiniBench.Core;
+﻿using MiniBench.Core;
+using System;
 using Xunit;
 
 namespace Features
@@ -29,7 +29,7 @@ namespace Features
         }
 
         [Benchmark]
-        public double IterationParamsBenchmark(IterationParams iteration)
+        public double Benchmark(IterationParams iteration)
         {
             // It seems like Assert Failiures inside the Benchmark, don't actually fail the test, although
             // there is a message printed in the test output. Probably because we create a new instance of

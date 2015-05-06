@@ -40,7 +40,7 @@ namespace Features
         }
 
         [Benchmark]
-        public double SetupAttributeBenchmark()
+        public double Benchmark()
         {
             _demoTestRunCount++;
             // We can only do this, if SetupMethod() has been run, otherwise _collector will be null

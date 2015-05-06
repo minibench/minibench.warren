@@ -1,7 +1,7 @@
-﻿using System;
+﻿using MiniBench.Core;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using MiniBench.Core;
 using Xunit;
 
 namespace Features
@@ -32,13 +32,12 @@ namespace Features
         }
 
 #pragma warning disable 649 // we know that the Benchmark with write/read this field
-        // This must be public, writable and field/property?!?
         [ParamsWithSteps(start:1, end:10, step:1)]
         public int Param { get; set; }
 #pragma warning restore 649
 
         [Benchmark]
-        public double IterationParamsBenchmark(IterationParams iteration)
+        public double Benchmark()
         {
             if (_params.Contains(Param) == false)
                 _params.Add(Param);
@@ -78,7 +77,7 @@ namespace Features
         public int Param = 0;
 
         [Benchmark]
-        public double IterationParamsBenchmark(IterationParams iteration)
+        public double Benchmark()
         {
             if (_params.Contains(Param) == false)
                 _params.Add(Param);
