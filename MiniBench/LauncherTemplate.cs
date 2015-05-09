@@ -42,14 +42,24 @@ namespace MiniBench.Benchmarks
             else if (commandLineArgs.ListProfilers)
             {
                 Profiler profiler = new Profiler(commandLineArgs);
-                foreach (KeyValuePair<IInternalProfiler, AggregatedProfilerResult []> internalProfiler in profiler.Profilers)
+                if (profiler.AvailableProfilers.Count == 0)
                 {
-                    Console.WriteLine(""{0} - {1}"", internalProfiler.Key.Name, internalProfiler.Key.SummaryText);
+                     Console.WriteLine(""There are no profilers registered!"");
+                }
+                else
+                {
+                    Console.WriteLine(""Available Profilers:"");
+                    foreach (var internalProfiler in profiler.AvailableProfilers)
+                    {
+                        Console.WriteLine(""{0} - {1}"", internalProfiler.Name, internalProfiler.SummaryText);
+                    }
+                    Console.WriteLine();
                 }
                 return;
             }
             else
             {
+                Console.WriteLine(""Profiler: "" + commandLineArgs.ProfilerToRun);
                 Options opt = new OptionsBuilder()
                                     .Include(commandLineArgs.BenchmarksToRun)
                                     .Build();

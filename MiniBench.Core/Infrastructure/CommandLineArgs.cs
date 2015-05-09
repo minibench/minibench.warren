@@ -36,10 +36,10 @@ namespace MiniBench.Core.Infrastructure
         {
             // "value" parameters with a required value (append `=' to the option name) or an optional value (append `:' to the option name).
             return new OptionSet()
-                .Add("?|help|h", "Prints out the options.", option => help = option != null)
-                .Add("l|list", "List matching benchmarks and exit.", option => ListBenchmarks = option != null)
+                .Add("?|h|help", "Prints out the options.", option => help = option != null)
+                .Add("l|list", "List matching Benchmarks and exit.", option => ListBenchmarks = option != null)
+                .Add("p:|profiler:", "Run the specified Profiler", option => ProfilerToRun = option);
                 .Add("lprof|listProf", "List the available Profilers and exit.", option => ListProfilers = option != null)
-                .Add("prof|Prof", "Run the specified Profiler", option => ProfilerToRun = option);
         }
 
         private void ParseCommandLineArgs(string[] args)

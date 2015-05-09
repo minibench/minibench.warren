@@ -6,10 +6,15 @@ namespace MiniBench.Core.Profiling
 {
     internal class Profiler
     {
-        internal readonly Dictionary<IInternalProfiler, AggregatedProfilerResult []> Profilers =
-            new Dictionary<IInternalProfiler, AggregatedProfilerResult []>
+        internal readonly IList<IInternalProfiler> AvailableProfilers =
+            new IInternalProfiler []
             {
-                //{ new GCProfiler(), null }
+                new GCProfiler()
+            };
+
+        internal readonly Dictionary<IInternalProfiler, AggregatedProfilerResult[]> Profilers =
+            new Dictionary<IInternalProfiler, AggregatedProfilerResult[]>
+            {
             };
 
         private CommandLineArgs arguments;
@@ -18,7 +23,17 @@ namespace MiniBench.Core.Profiling
         {
             this.arguments = arguments;
 
-            //var profilerToRun = 
+            if (this.arguments.ProfilerToRun != null &&
+                this.arguments.ProfilerToRun != String.Empty)
+            {
+                foreach (var profiler in AvailableProfilers)
+                {
+                    if (profiler.Name == this.arguments.ProfilerToRun)
+                    {
+                        Profilers.Add(profiler, null);
+                    }
+                }
+            }
         }
 
         internal void BeforeIteration()
